@@ -1,0 +1,1382 @@
+:root {
+  --subBgColor: #121318;
+  --bgColor: #2d2f3b;
+  --elem1Color: #4a4e61;
+  --elem2Color: #adb0bd;
+  --tarjetaBg: #353846;
+  --colorPrimarioOscuro: #50175a;
+  --colorPrimario: #671e75;
+  --colorPrimarioGris: #893b99;
+  --colorPrimarioClaro: #c354da;
+  --colorPrimarioClaro2: rgb(236, 141, 255);
+  --colorSobrePrimario: rgb(216, 216, 216);
+
+  --errorColor: #ff5959;
+  --errorColorShadow: #a13939;
+
+
+  --buttonTransitionTime: 0.2s;
+  --messageTransitionTime: 0.4s;
+
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--bgColor);
+  font-size: 100%;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+
+  position: absolute;
+
+
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/*################################
+#         Clases genericas
+##################################*/
+/*Boton aceptar*/
+.boton-aceptar {
+  width: fit-content;
+  height: fit-content;
+
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+
+  background-color: var(--colorPrimario);
+  border: solid;
+  border-radius: 10px;
+  border-color: var(--colorPrimarioClaro);
+  border-width: 1px;
+
+  color: var(--elem2Color);
+  font-size: 17px;
+  font-family: 'Arial';
+  font-weight: bold;
+
+  box-shadow: var(--colorPrimarioClaro) 0px 0px 16px 1px;
+
+  transition: all var(--buttonTransitionTime);
+}
+
+.boton-aceptar:hover:enabled {
+  box-shadow: var(--colorPrimarioClaro2) 0px 0px 16px 2px;
+  border-color: var(--colorPrimarioClaro2);
+  color: var(--colorSobrePrimario);
+  cursor: pointer;
+  transform: translateY(-1px);
+}
+
+.boton-aceptar:active:enabled {
+  color: var(--elem2Color);
+  border-color: var(--colorPrimarioClaro);
+  box-shadow: none;
+  transform: translateY(1px);
+
+}
+
+.boton-aceptar:disabled {
+  background-color: var(--tarjetaBg);
+  box-shadow: none;
+  border-color: var(--elem1Color);
+}
+
+/*Boton cancelar*/
+.boton-cancelar {
+  width: fit-content;
+  height: fit-content;
+
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+
+  background-color: var(--bgColor);
+  border: solid;
+  border-radius: 10px;
+  border-color: var(--elem2Color);
+  border-width: 1px;
+
+  color: var(--elem2Color);
+  font-size: 17px;
+  font-family: 'Arial';
+  font-weight: bold;
+
+  box-shadow: var(--bgColor) 0px 0px 16px 1px;
+
+  transition: all var(--buttonTransitionTime);
+}
+
+.boton-cancelar:hover:enabled {
+  box-shadow: var(--elem1Color) 0px 0px 16px 2px;
+  border-color: var(--elem2Color);
+  color: var(--colorSobrePrimario);
+  cursor: pointer;
+  transform: translateY(-1px);
+}
+
+.boton-cancelar:active:enabled {
+  color: var(--elem2Color);
+  border-color: var(--elem1Color);
+  box-shadow: none;
+  transform: translateY(1px);
+
+}
+
+.boton-cancelar:disabled {
+  background-color: var(--tarjetaBg);
+  box-shadow: none;
+  border-color: var(--elem1Color);
+}
+
+/*Boton eliminar*/
+.boton-eliminar {
+  height: fit-content;
+  width: fit-content;
+
+  background-color: transparent;
+  border-radius: 5px;
+  border: solid;
+  border-width: 1px;
+
+  padding: 5px;
+
+  color: var(--errorColor);
+  transition: all var(--buttonTransitionTime);
+  cursor: pointer;
+}
+
+.boton-eliminar:hover:enabled {
+  transform: translateY(-1px);
+  box-shadow: var(--errorColorShadow) 0px 0px 16px 1px;
+}
+
+.boton-eliminar:active:enabled {
+  box-shadow: none;
+  transform: translateY(1px);
+}
+
+.boton-eliminar:disabled {
+  color: var(--errorColorShadow);
+  border-color: var(--errorColorShadow);
+  cursor: default;
+}
+
+/*Scrollbar*/
+::-webkit-scrollbar {
+  width: 17px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--elem2Color);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--elem1Color);
+  border: 3px solid transparent;
+  border-radius: 10px;
+  border-color: transparent;
+  background-clip: content-box;
+
+}
+
+/*Mensaje de error*/
+.error-message {
+  height: fit-content;
+  width: 100%;
+
+  color: var(--errorColor);
+  border: solid;
+  border-radius: 7px;
+  border-width: 1px;
+  border-color: var(--errorColorShadow);
+
+  padding: 5px;
+
+  transition: all var(--messageTransitionTime);
+  text-align: center;
+
+  transition: all var(--messageTransitionTime);
+}
+
+.error-message.disabled {
+  height: 0;
+  padding: 0;
+  overflow: hidden;
+  border: none;
+}
+
+/*Logotipo*/
+.logo{
+  content: url(../../assets/logo.png);
+
+  height: fit-content;
+  width: fit-content;
+}
+/*##########################################################################################################
+##########################################################################################################
+
+                                      Pantalla principal
+
+##########################################################################################################
+##########################################################################################################
+*/
+/*################################
+#             Cabecera
+##################################*/
+.header-top {
+  display: flex;
+  height: 70px;
+  background-color: var(--elem);
+  align-items: center;
+}
+
+/*Titulo*/
+.header-top.titulo {
+  width: fit-content;
+  margin-right: auto;
+  margin-left: 20px;
+}
+
+.header-top.titulo div {
+  display: flex;
+  align-items: center;
+}
+
+.texto-titulo {
+  color: var(--elem2Color);
+  font-size: 30px;
+  font-family: 'Arial';
+}
+
+/*Nombre ususario*/
+.header-top.user div {
+  width: fit-content;
+  display: flex;
+  align-items: center;
+}
+
+.texto-nombre-usuario {
+  padding: 10px;
+  padding-right: 20px;
+  height: fit-content;
+  width: fit-content;
+  color: var(--elem2Color);
+  font-size: large;
+  font-family: 'Arial';
+  font-weight: bold;
+}
+
+/*Boton de recargar*/
+.header-top .boton-cancelar {
+  background-color: var(--bgColor);
+}
+
+.header-top .boton-cancelar:disabled {
+  color: var(--elem1Color)
+}
+
+/*Boton de ajustes*/
+.header-top.settings {
+  margin-right: 20px;
+}
+
+.header-top.settings div {
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  background-color: var(--bgColor);
+}
+
+.header-top.header-top.settings div button {
+  height: 40px;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bgColor);
+  border: solid;
+  border-radius: 20%;
+  border-color: var(--elem1Color);
+  border-width: 1px;
+  cursor: pointer;
+  transition: all var(--buttonTransitionTime);
+}
+
+.header-top.header-top.settings div button:hover {
+  box-shadow: var(--elem2Color) 0px 0px 16px 2px;
+  border-color: var(--elem2Color);
+  transform: translateY(-1px);
+}
+
+.header-top.header-top.settings div button:active {
+  box-shadow: none;
+  border-color: var(--elem1Color);
+  transform: translateY(1px);
+}
+
+.header-top.settings div button img {
+  content: url(../../assets/setting.svg);
+  height: 30px;
+  width: 30px;
+  filter: invert(76%) sepia(19%) saturate(140%) hue-rotate(191deg) brightness(90%) contrast(89%);
+}
+
+/*###################################################################################
+#             Conexiones
+#####################################################################################*/
+/*Contenedor de conexiones*/
+.contenedor-conexiones {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 0.8fr));
+  /*background-color: aqua;*/
+  justify-items: center;
+  align-items: center;
+  margin: 20px;
+}
+
+
+/*Tarjeta de conexion*/
+.tarjeta-conexion {
+  height: 300px;
+  width: 300px;
+
+  border: solid;
+  border-radius: 5%;
+  border-width: 1px;
+  border-color: var(--elem1Color);
+  background-color: var(--tarjetaBg);
+
+  box-shadow: var(--subBgColor) 0px 0px 8px 0px;
+  overflow: hidden;
+  position: relative;
+}
+
+/*Cabecera tarjeta*/
+.header-tarjeta {
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: left;
+
+  background-color: var(--elem1Color);
+
+}
+
+.header-tarjeta.div-nombre {
+  position: relative;
+  width: 240px;
+  overflow: hidden;
+}
+
+.header-tarjeta.div-nombre.div-texto {
+  width: 240px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.header-tarjeta.nombre-tarjeta {
+  height: fit-content;
+  width: 220px;
+  margin-left: 16px;
+
+  color: var(--elem2Color);
+  font-size: 20px;
+  font-family: 'Arial';
+  font-weight: bold;
+
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+}
+
+.overflow-anim:hover {
+
+  display: block;
+  width: fit-content;
+  overflow: visible;
+
+  cursor: default;
+  animation: 5s linear textoverflow;
+}
+
+@keyframes textoverflow {
+  from {
+    transform: translateX(0%);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.fader {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 15px;
+
+  &.fader-left {
+    left: 0;
+    background: linear-gradient(to left,
+        rgba(255, 255, 255, 0),
+        var(--elem1Color));
+    margin-top: 2px;
+    border-top-left-radius: 20px;
+  }
+
+  &.fader-right {
+    right: 0;
+    background: linear-gradient(to right,
+        rgba(255, 255, 255, 0),
+        var(--elem1Color));
+  }
+}
+
+.header-tarjeta button {
+  height: fit-content;
+  width: fit-content;
+  padding: 5px;
+  margin-left: auto;
+  margin-right: 10px;
+  background-color: var(--elem1Color);
+  border: none;
+  border-radius: 20%;
+}
+
+.header-tarjeta button:hover {
+  background-color: var(--tarjetaBg);
+  cursor: pointer;
+}
+
+.header-tarjeta button img {
+  content: url(../../assets/setting.svg);
+  height: 20px;
+  width: 20px;
+  filter: invert(76%) sepia(19%) saturate(140%) hue-rotate(191deg) brightness(90%) contrast(89%);
+}
+
+
+/*Contenido tarjeta*/
+.contenido-tarjeta {
+  height: fit-content;
+  display: grid;
+  grid-template-columns: fit-content(100%) auto;
+  margin-top: 10px;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.contenido-tarjeta.tipo-dato {
+  height: fit-content;
+  width: fit-content;
+  color: var(--elem2Color);
+
+  font-family: 'Arial';
+  font-weight: bold;
+
+  margin-left: auto;
+  margin-right: 15px;
+  margin-top: 5px;
+}
+
+.contenido-tarjeta.valor-dato {
+  height: fit-content;
+  width: fit-content;
+  color: var(--elem2Color);
+  font-size: 15px;
+  font-family: 'Arial';
+  margin-top: 5px;
+
+}
+
+/*Boton tarjeta*/
+.boton-aceptar.conectar-container {
+  position: absolute;
+  right: 0;
+  bottom: 10px;
+  left: 0;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/*Tarjeta crea nueva tarjeta*/
+/*Tarjeta de conexion*/
+.tarjeta-conexion-disabled {
+  height: 300px;
+  width: 300px;
+
+  border: dashed;
+  border-radius: 5%;
+  border-width: 2px;
+  border-color: var(--elem1Color);
+  background-color: var(--bgColor);
+
+  overflow: hidden;
+  position: relative;
+}
+
+.boton-crea-tarjeta {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  background-color: var(--bgColor);
+  border: none;
+
+}
+
+.imagen-boton-crea-tarjeta {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  margin: auto;
+
+  background-color: transparent;
+  content: url(../../assets/plus.png);
+  height: 70px;
+  width: 70px;
+  filter: invert(29%) sepia(4%) saturate(3121%) hue-rotate(192deg) brightness(89%) contrast(81%);
+
+}
+
+.boton-crea-tarjeta:hover {
+  background-color: var(--tarjetaBg);
+  cursor: pointer;
+}
+
+.boton-crea-tarjeta:active {
+
+  box-shadow: var(--subBgColor) 0px 0px 60px -16px inset;
+  background-color: var(--bgColor);
+
+}
+
+
+/*###################################################################################
+        Modal Generico
+#####################################################################################*/
+.modal {
+  height: 100%;
+  display: none;
+  /* Hidden by default */
+  position: fixed;
+  /* Stay in place */
+  z-index: 1;
+  /* Sit on top */
+  padding-top: 20vh;
+  /* Location of the box */
+  left: 0;
+  top: 0;
+  width: 100%;
+  /* Full width */
+  height: 100%;
+  /* Full height */
+  background-color: rgba(0, 0, 0, 0.4);
+  /* Black w/ opacity */
+  backdrop-filter: blur(15px);
+  /*animation: anim-difumina-fondo 0.2s;*/
+}
+
+.modal-content {
+  background-color: var(--tarjetaBg);
+  margin: auto;
+  padding: 0;
+  border: 2px solid var(--elem1Color);
+  width: 600px;
+  max-height: 70vh;
+
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+
+  /*animation: anim-muestra-modal 0.2s;*/
+  border-radius: 20px;
+
+  /*overflow: block;
+  position: relative;*/
+}
+
+.modal.in {
+  animation: anim-difumina-fondo 0.2s;
+}
+
+.modal.out {
+  /*animation: anim-difumina-fondo 0.2s reverse;*/
+  animation: anim-difumina-fondo 0.2s reverse;
+}
+
+.modal-content.in {
+  animation: anim-muestra-modal 0.2s;
+}
+
+.modal-content.out {
+  /*animation: anim-difumina-fondo 0.2s reverse;*/
+  animation: anim-muestra-modal 0.2s reverse;
+}
+
+
+
+@keyframes anim-muestra-modal {
+  0% {
+    transform: translateY(1000px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+
+}
+
+@keyframes anim-difumina-fondo {
+  0% {
+    backdrop-filter: blur(0px);
+  }
+
+  100% {
+    backdrop-filter: blur(15px);
+  }
+}
+
+/*Cabecera*/
+.modal-header {
+  height: 80px;
+  width: 100%;
+  background:
+    linear-gradient(to left,
+      var(--colorPrimarioOscuro),
+      rgba(0, 0, 0, 0) 20%),
+    linear-gradient(to right,
+      var(--colorPrimarioOscuro),
+      rgba(0, 0, 0, 0) 20%),
+    linear-gradient(var(--colorPrimario),
+      var(--colorPrimarioOscuro));
+  position: relative;
+  display: flex;
+}
+
+.modal-header.titulo-modal {
+  height: fit-content;
+  width: fit-content;
+  background-color: transparent;
+  background: none;
+
+  color: var(--colorSobrePrimario);
+  font-size: 30px;
+  font-family: 'Arial';
+  align-self: center;
+  right: 0;
+  left: 0;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.modal-header.separador {
+  position: absolute;
+  height: 1px;
+  width: 100%;
+  background: none;
+  background-color: var(--elem1Color);
+  align-self: flex-end;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+
+
+}
+
+/*Contenido*/
+.modal-body {
+  overflow-y: auto;
+  max-height: calc(70vh - 90px);
+
+}
+
+.modal-body-grid {
+  display: grid;
+  grid-template-columns: 40% auto;
+  margin-left: 10px;
+  margin-right: 10px;
+  margin-top: 20px;
+  align-items: center;
+}
+
+.tipo-dato-form {
+  height: fit-content;
+  width: fit-content;
+  color: var(--elem2Color);
+
+  font-family: 'Arial';
+  font-weight: bold;
+
+  margin-left: auto;
+  margin-right: 25px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+/*Estilizo el input de texto y numero*/
+input {
+  height: fit-content;
+  width: 60%;
+
+  background-color: var(--bgColor);
+  border: solid;
+  border-radius: 7px;
+  border-color: var(--elem1Color);
+  border-width: 2px;
+
+  align-self: center;
+
+  color: var(--elem2Color);
+
+  font-family: 'Arial';
+  font-size: 15px;
+
+  padding: 5px;
+
+}
+
+
+input:focus {
+  border-color: var(--colorPrimarioClaro);
+  outline: transparent solid 1px;
+}
+
+input[type="number"] {
+  caret-color: transparent;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  appearance: none;
+}
+
+.custom-input-number {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: fit-content;
+}
+
+.custom-input-number div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 22px;
+  width: fit-content;
+  background-color: transparent;
+
+  position: absolute;
+  right: 2px;
+  margin-left: auto;
+}
+
+.custom-input-number div button {
+  height: 50%;
+  width: 25px;
+
+  border: solid;
+  border-radius: 5px;
+  border-width: 0px;
+
+  border-color: var(--colorPrimarioClaro);
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+}
+
+.custom-input-number div button img {
+  content: url(../../assets/left-arrow.png);
+  transform: rotate(90deg);
+  filter: invert(76%) sepia(19%) saturate(140%) hue-rotate(191deg) brightness(90%) contrast(89%);
+}
+
+.custom-input-number div button:hover {
+  background-color: var(--tarjetaBg);
+}
+
+
+.custom-input-number.disabled input {
+  color: var(--elem1Color);
+}
+
+.custom-input-number.disabled div button img {
+  color: var(--elem1Color);
+  filter: invert(29%) sepia(4%) saturate(3121%) hue-rotate(192deg) brightness(89%) contrast(81%);
+}
+
+.custom-input-number.disabled div button:hover {
+  background-color: transparent;
+}
+
+/*Selectro de datos*/
+.selector {
+  width: 60%;
+  height: fit-content;
+
+  align-self: center;
+
+  background-color: var(--bgColor);
+  color: var(--elem2Color);
+
+  border-radius: 5px;
+  border-width: 2px;
+  border-color: var(--elem1Color);
+
+  font-family: 'Arial';
+  font-size: 15px;
+  padding: 5px;
+}
+
+.selector:focus {
+  border-color: var(--colorPrimarioClaro);
+  outline: transparent solid 1px;
+}
+
+.selector:disabled {
+  color: var(--elem1Color)
+}
+
+.error-container-modal {
+  height: fit-content;
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  margin: 20px;
+}
+
+/*######################################################################################
+                Modal de alerta
+  ######################################################################################
+*/
+
+.modal-header.alert{
+  background: none;;
+  background-color: var(--tarjetaBg);
+
+  display: flex;
+  align-items: center;
+
+  box-shadow: var(--bgColor) 0 0 16px 4px, var(--elem1Color) 0 0 16px -4px inset;
+}
+
+.modal-header.alert .titulo-modal{
+
+  color: var(--elem2Color);
+  
+  font-weight: 500;
+  font-size: 25px;
+
+  margin: 20px;
+
+}
+
+.modal-body.alert div {
+  height: fit-content;
+
+  margin-top: 40px;
+  margin-bottom: 40px;
+
+  margin-right: 60px;
+  margin-left: 60px;
+
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--elem2Color);
+}
+
+.modal-body .mensaje{
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 20px;
+}
+
+.boton-aceptar.alert{
+  box-shadow: var(--bgColor) 0px 0px 16px 1px;
+}
+
+
+
+
+
+/*##########################################################################################################
+##########################################################################################################
+
+                                      Pantalla de RDP
+
+##########################################################################################################
+##########################################################################################################
+*/
+
+.RDP-video-container {
+  height: 100%;
+  width: 100%;
+
+  min-height: 600px;
+  min-width: 800px;
+  background-color: black;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.RDP-video-container .texto-estado {
+  height: fit-content;
+  width: fit-content;
+
+  color: var(--elem2Color);
+
+  font-family: 'Arial';
+  font-size: 30px;
+}
+
+.RDP-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background-color: #50175a;
+}
+
+.RDP-contenedor-desplegable {
+  height: fit-content;
+  width: fit-content;
+
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin-top: auto;
+  margin-bottom: auto;
+
+  display: flex;
+  justify-content: left;
+  align-items: center;
+
+  transform: translateX(200px);
+
+  transition: all 0.5s;
+}
+
+.RDP-contenedor-desplegable.in {
+  transform: translateX(0px);
+}
+
+.RDP-contenedor-desplegable.in .RDP-pestania-contenedor-comandos img {
+  transform: rotate(180deg);
+}
+
+.RDP-contenedor-comandos {
+  height: fit-content;
+  width: fit-content;
+
+  max-width: 100%;
+  min-width: 200px;
+
+  max-height: 100%;
+  min-height: 200px;
+
+  position: relative;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin-top: auto;
+  margin-bottom: auto;
+
+  background-color: var(--tarjetaBg);
+  border-radius: 20px 0 0 20px;
+  border: solid;
+  border-width: 2px;
+  border-color: var(--elem1Color);
+
+  display: flex;
+  flex-direction: column;
+
+}
+
+.RDP-pestania-contenedor-comandos {
+  height: 30px;
+  width: 20px;
+
+  align-self: flex-end;
+  margin-bottom: 30px;
+
+  background-color: var(--elem1Color);
+  border-radius: 5px 0 0 5px;
+  display: flex;
+  align-items: center;
+  justify-items: center;
+
+  cursor: pointer;
+
+}
+
+.RDP-pestania-contenedor-comandos:active {
+  background-color: var(--tarjetaBg);
+}
+
+.RDP-pestania-contenedor-comandos img {
+  height: 14px;
+
+  content: url(../../assets/left-arrow.png);
+
+  margin-top: 3px;
+  margin-bottom: 3px;
+  margin-left: 3px;
+  margin-right: 3px;
+
+  transition: all 0.5s;
+
+
+  filter: invert(76%) sepia(19%) saturate(140%) hue-rotate(191deg) brightness(90%) contrast(89%);
+
+}
+
+.RDP-contenedor-comandos .boton {
+  height: fit-content;
+  padding: 10px;
+  margin: 2px;
+
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--elem2Color);
+  font-weight: bold;
+
+  border-radius: 15px 0 0 15px;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: left;
+}
+
+.RDP-contenedor-comandos .boton:hover {
+  background-color: var(--elem1Color);
+}
+
+.RDP-contenedor-comandos .boton div {
+  width: fit-content;
+
+}
+
+.RDP-contenedor-comandos .boton img {
+  height: 20px;
+  width: auto;
+
+  margin-right: 10px;
+  filter: invert(76%) sepia(19%) saturate(140%) hue-rotate(191deg) brightness(90%) contrast(89%);
+
+}
+
+/*##########################################################################################################
+##########################################################################################################
+
+                                      Pantalla de Login
+
+##########################################################################################################
+##########################################################################################################
+*/
+
+.login-form{
+  display: block;
+  height: 100%;
+  width: 100%;
+  position: fixed;
+  /* Stay in place */
+  z-index: 1;
+  /* Sit on top */
+  padding-top: 10vh;
+  padding-bottom: 10vh;
+  /* Location of the box */
+  left: 0;
+  top: 0;
+  background-color: transparent;
+
+}
+
+.login-form .modal-content {
+  background-color: transparent;
+  width: 600px;
+  height: 100%;
+
+  /*animation: anim-muestra-modal 0.2s;*/
+  border: none;
+  box-shadow: none;
+
+  overflow: visible;
+
+  background-color: transparent;
+  border-radius: 0;
+
+  max-height: 80vh;
+
+}
+
+.flip-card {
+  background-color: transparent;
+  width: 100%;
+  height: 100%;
+  perspective: 1000px;
+  
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.flip-card.crear .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card-front, .flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.flip-card-front {
+  background-color: #bbb;
+  color: black;
+}
+
+.flip-card-back {
+  color: white;
+  transform: rotateY(180deg);
+}
+
+
+/*Pantalla de login*/
+.pantalla-login{
+  height: 100%;
+  background-color: transparent;
+
+  overflow: hidden;
+  border: solid;
+  border-radius: 20px;
+  border-width: 2px;
+  border-color: var(--elem1Color);
+
+  display: flex;
+  flex-direction: column;
+
+  overflow-y: auto;
+}
+
+.pantalla-login .modal-header{
+  height: 200px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent;
+
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+
+}
+
+.pantalla-login .titulo-modal{
+
+  height: fit-content;
+  width: fit-content;
+
+  margin: auto;
+  margin-top: 20px;
+
+}
+
+.pantalla-login .logo{
+  height: 100px;
+  width: auto;
+
+  right: 0;
+  left: 0;
+  margin: auto;
+  margin-top: 30px;
+  
+}
+
+.input-dato.checkbox{
+  width: fit-content;
+
+  position: relative;
+
+  margin-top: 10px;
+  
+
+  cursor: pointer;
+
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
+  font-size: 17px;
+  color: var(--elem2Color);
+
+  display: flex;
+  justify-content: left;
+}
+
+.input-dato.checkbox input{
+  /* Add if not using autoprefixer */
+  -webkit-appearance: none;
+  appearance: none;
+  /* For iOS < 15 to remove gradient background */
+  background-color: #fff;
+  /* Not removed via appearance */
+  margin: 0;
+
+  cursor: pointer;
+
+  height: 25px;
+  width: 25px;
+
+  margin-right: 10px;
+
+  border: solid;
+  border-color: var(--elem1Color);
+  border-radius: 7px;
+  border-width: 2px;
+
+  background-color: var(--bgColor);
+
+  font: inherit;
+  color: var(--elem2Color);
+
+  transform: translateY(-3px);
+}
+
+.input-dato.checkbox input{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.input-dato.checkbox input:checked::before{
+  content: "";
+  width: 100%;
+  height: 100%;
+  transform: scale(0);
+  transition: all 0.8s ease-in-out;
+  background-color: var(--colorPrimarioClaro);
+
+  border-radius: 2px;
+  /*box-shadow: inset 2px 2px var(--colorPrimario);*/
+}
+
+.input-dato.checkbox input:checked::before{
+  transform: scale(1.2);
+}
+
+
+/*Pantalla de cerrar*/
+
+
+.pantalla-crea{
+  height: 100%;
+  background-color: transparent;
+
+  overflow: hidden;
+  border: solid;
+  border-radius: 20px;
+  border-width: 2px;
+  border-color: var(--elem1Color);
+
+  display: flex;
+  flex-direction: column;
+
+  overflow-y: auto;
+}
+
+.pantalla-crea .modal-header{
+  height: 150px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: transparent;
+
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.pantalla-crea .titulo-modal{
+
+  height: fit-content;
+  width: fit-content;
+
+  margin: auto;
+  margin-top: 20px;
+
+}
+
+.pantalla-crea .logo{
+  height: 80px;
+  width: auto;
+
+  right: 0;
+  left: 0;
+  margin: auto;
+  margin-top: 30px;
+  
+}
+
+
+/*Cargando*/
+.lds-dual-ring {
+  /* change color here */
+  color: var(--elem2Color)
+}
+.lds-dual-ring,
+.lds-dual-ring:after {
+  box-sizing: border-box;
+}
+.lds-dual-ring {
+  display: inline-block;
+  width: 80px;
+  height: 80px;
+}
+.lds-dual-ring:after {
+  content: " ";
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 8px;
+  border-radius: 50%;
+  border: 6.4px solid currentColor;
+  border-color: currentColor transparent currentColor transparent;
+  animation: lds-dual-ring 1.2s linear infinite;
+}
+@keyframes lds-dual-ring {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-host-dep
+  labels:
+    name: host
+spec:
+  type: LoadBalancer
+  selector:
+    name: host

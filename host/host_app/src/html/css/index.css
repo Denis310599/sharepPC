@@ -1,0 +1,23 @@
+body{
+  font-size: 100%
+}
+.texto{
+  font-size: 1.8em;
+  font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+  color: white;
+  background-color: rgb(65, 145, 65);
+  border-radius: 5px;
+  padding: 8px;
+  margin: 10px;
+  width: fit-content;
+}
+
+.resultado{
+  font-size: 2em;
+  margin-inline-start: 50px;
+}
+
+.cabecera{
+  display: flex;
+  justify-content: flex-start;
+}

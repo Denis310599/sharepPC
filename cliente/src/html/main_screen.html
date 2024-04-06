@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+
+
+    <title>SharePC</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="css/index.css">
+
+    <script defer src="../js/main_screen_logic.js"></script>
+  </head>
+  <body>
+    <div class="header-top">
+      
+      <div class="header-top titulo">
+        <div>
+          <s1 class="texto-titulo">SharePC</s1>
+        </div>
+      </div>
+        <div class="header-top" style="padding: 20px;">
+          <button class="boton-cancelar" id="botonRecargar">
+            Recargar
+          </button>
+        </div>
+      <div>
+
+      </div>
+      <div class="header-top user">
+        <div>
+          <s1 id="textoUsuario" class="texto-nombre-usuario">Denis31599</s1>
+        </div>
+      </div>
+
+      <div class="header-top settings">
+        <div>
+          <button>
+            <img id="botonSettings"></img>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div style="height: 2px; background-color: var(--elem1Color);"></div>
+
+
+    <!-- Contenedor de las conexiones remotas-->
+    <div style="overflow-y: auto; height: calc(100vh - 72px);">
+      
+
+      <template id="tarjetaConexionTemplate">
+        <div class="tarjeta-conexion">
+          <div class="header-tarjeta">
+            
+            <div class="header-tarjeta div-nombre">
+              
+              <div class="header-tarjeta div-nombre div-texto">
+                <s1 class="header-tarjeta nombre-tarjeta">Contenedor linux</s1>
+              </div>
+              <div class="fader fader-left"></div>
+              <div class="fader fader-right"></div>
+            </div>
+            
+            
+            <button class="boton-editar">
+              <img></img>
+            </button>
+          </div>
+          
+          <div class="contenido-tarjeta">
+            <s1 class="contenido-tarjeta tipo-dato">Tipo conexión</s1>
+            <s1 class="contenido-tarjeta valor-dato">RDP</s1>
+            <s1 class="contenido-tarjeta tipo-dato">Imagen</s1>
+            <s1 class="contenido-tarjeta valor-dato">Default</s1>
+            <s1 class="contenido-tarjeta tipo-dato">CPUs</s1>
+            <s1 class="contenido-tarjeta valor-dato">4</s1>
+            <s1 class="contenido-tarjeta tipo-dato">Memoria</s1>
+            <s1 class="contenido-tarjeta valor-dato">4096Mb</s1>
+          </div>
+
+          <button class="boton-aceptar conectar-container">Conectar</button>
+        </div>
+      </template>
+        
+      <div id="contenedorTarjetas" class="contenedor-conexiones">    
+        <div class="tarjeta-conexion-disabled">
+          <button id="botonCreacionTarjeta" class="boton-crea-tarjeta">
+            <img class="imagen-boton-crea-tarjeta"></img>
+          </button>
+        </div>
+      </div>
+    </div>    
+    <!-- Modal de creación de contenedor-->
+    <div id="modalCreacionContenedor" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-header titulo-modal">Nuevo Contenedor</h2>
+          <div class="modal-header separador"></div>
+        </div>
+        <div class="modal-body">
+          <div class="modal-body-grid">
+            <div class="tipo-dato-form">Nombre</div>
+            <input type="text" class="input-dato nombre-contenedor" pattern="[^a-zA-Z]+"></input>
+
+            <div class="tipo-dato-form">Imagen</div>
+            <select class="selector">
+              <optgroup label="Imágenes por defecto">
+                <option>Linux</option>
+              </optgroup>
+              <optgroup label="Mis imagenes">
+                <option>Mi imagen wapisima</option>
+              </optgroup>
+            </select>
+            
+            <div class="tipo-dato-form">Memoria</div>
+            <div style="align-self: center; display: flex;">
+              <div class="custom-input-number">
+                <input class="input-mem-size" type="number" value="4096" min="512" max="32768" step="512" style="width: 100px;"></input>
+                <div>
+                  <button class="custom-input-number-increment">
+                    <img></img>
+                  </button>
+                  <button class="custom-input-number-decrement">
+                    <img style="transform: rotate(-90deg);"></img>
+                  </button>
+                </div>
+              </div>
+
+              <select class="selector input-mem-type" style="width: fit-content; margin-left: 5px;" value="Mi">
+                <option value="Gi">Gi</option>
+                <option value="Mi" selected="selected">Mi</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="tipo-dato-form">CPUs</div>
+            <div class="custom-input-number">
+              <input class="input-cpus" type="number" value="4" min="1" max="16" step="1" style="width: 60px;"></input>
+              <div>
+                <button class="custom-input-number-increment">
+                  <img></img>
+                </button>
+                <button class="custom-input-number-decrement">
+                  <img style="transform: rotate(-90deg);"></img>
+                </button>
+              </div>
+            </div>
+
+            <div class="tipo-dato-form">Tipo conexión</div>
+            <select class="selector">
+              <option>Escritorio remoto</option>
+              <option>Consola</option>
+            </select>
+          </div>
+          <div class="error-container-modal">
+            <div class="error-message disabled">Error</div>
+          </div>
+          <div style="display: flex; justify-content: center; margin: 10px; margin-top: 30px;">
+            <button id="botonCancelarCreacionContenedor" class="boton-cancelar" style="margin: 10px;">Cancelar</button>
+            <button class="boton-aceptar" style="margin: 10px;">Crear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de edicion de contenedor -->
+    <div id="modalEdicionContenedor" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-header titulo-modal">Editar contenedor</h2>
+          <div class="modal-header separador"></div>
+        </div>
+        <div class="modal-body">
+          
+          <!--Id contenedor-->
+          <div class="id-contenedor" style="display: none;"></div>
+
+          <div class="modal-body-grid">           
+            <!--Nombre-->
+            <div class="tipo-dato-form">Nombre</div>
+            <input type="text" class="input-dato nombre-contenedor"></input>
+
+            <div class="tipo-dato-form">Imagen</div>
+            <select class="selector">
+              <optgroup label="Imágenes por defecto">
+                <option>Linux</option>
+              </optgroup>
+              <optgroup label="Mis imagenes">
+                <option>Mi imagen wapisima</option>
+              </optgroup>
+            </select>
+            <!--Memoria-->
+            <div class="tipo-dato-form">Memoria</div>
+            <div style="align-self: center; display: flex;">
+              <div class="custom-input-number">
+                <input class="input-mem-size" type="number" value="4096" min="512" max="32768" step="512" style="width: 100px;"></input>
+                <div>
+                  <button class="custom-input-number-increment">
+                    <img></img>
+                  </button>
+                  <button class="custom-input-number-decrement">
+                    <img style="transform: rotate(-90deg);"></img>
+                  </button>
+                </div>
+              </div>
+              <select class="selector input-mem-type" style="width: fit-content; margin-left: 5px;" value="Mi">
+                <option value="Gi">Gi</option>
+                <option value="Mi" selected="selected">Mi</option>
+                </optgroup>
+              </select>
+            </div>
+            <!--CPUs-->
+            <div class="tipo-dato-form">CPUs</div>
+            <div class="custom-input-number">
+              <input class ="input-cpus" type="number" value="4" min="1" max="32" step="1" style="width: 60px;"></input>
+              <div>
+                <button class="custom-input-number-increment">
+                  <img></img>
+                </button>
+                <button class="custom-input-number-decrement">
+                  <img style="transform: rotate(-90deg);"></img>
+                </button>
+              </div>
+            </div>
+            <!--Tipo de conexion-->
+            <div class="tipo-dato-form">Tipo conexión</div>
+            <select class="selector">
+              <option>Escritorio remoto</option>
+              <option>Consola</option>
+            </select>
+
+            <div class="tipo-dato-form">Eliminar</div>
+            <button class="boton-eliminar">Eliminar contenedor</button> 
+          </div>
+          
+          <div class="error-container-modal">
+            <div class="error-message disabled">Error</div>
+          </div>
+
+          <div style="display: flex; justify-content: center; margin: 10px; margin-top: 30px;">
+            <button id="botonCancelarCreacionContenedor" class="boton-cancelar" style="margin: 10px;">Cancelar</button>
+            <button class="boton-aceptar" style="margin: 10px;">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--Modal de mensaje de alerta-->
+    <div id="modalAlertaUsuario" class="modal" style="display: none;  z-index: 2;">
+      <div class="modal-content">
+        <div class="modal-header alert">
+          <h2 class="titulo-modal">Título de la alerta</h2>
+        </div>
+        <div class="modal-body alert">
+          <div class="mensaje">
+            Este es un mensaje de alerta y ya vere como lo estilizo
+          </div>
+          <div style="display: flex; justify-content: right; margin: 10px; margin-top: 30px;">
+            <button class="boton-cancelar alert" style="margin: 10px;">Cancelar</button>
+            <button class="boton-aceptar alert" style="margin: 10px;">Aceptar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--Modal de cargando-->
+    <div id="modalCargando" class="modal" style="display: none;  z-index: 3; padding-top: 35vh; padding-bottom: 40vh;">
+      <div class="modal-content" style="width: fit-content; overflow: hidden; padding: 30px;">
+        <div class="modal-header alert" style="box-shadow: none;">
+          <h2 class="titulo-modal">Cargando</h2>
+          <div class="lds-dual-ring" style="margin: 10px;"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Modal de ajustes-->
+    <div id="modalAjustes" class="modal" style="display: none; ">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-header titulo-modal">Ajustes</h2>
+          <div class="modal-header separador"></div>
+        </div>
+        <div class="modal-body">
+          <div class="modal-body-grid"> 
+          <div class="tipo-dato-form">Cerrar Sesión</div>
+          <button class="boton-eliminar">Cerrar sesión</button> 
+        </div>
+        <div style="display: flex; justify-content: center; margin: 10px; margin-top: 30px;">
+          <button id="botonCancelarCreacionContenedor" class="boton-cancelar" style="margin: 10px;">Cancelar</button>
+        </div>
+        </div>
+      </div>
+    </div>
+
+    
+  <script src="../js/globa_things.js"></script>
+  </body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+
+
+    <title>SharePC</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="css/index.css">
+
+    <script defer src="../js/render.js"></script>
+    <script defer src="../js/rdp_visuals.js"></script>
+  </head>
+  <body>
+    <div class="RDP-video-container">
+      <div class="texto-estado">Conectando...</div>
+      <video class="RDP-video" style="display: none;"></video>
+    </div>
+
+    <div class="RDP-contenedor-desplegable desplegable-lateral">
+      <div class="RDP-pestania-contenedor-comandos pestania-desplegable">
+        <img></img>
+      </div>
+      <div class="RDP-contenedor-comandos desplegable-lateral">
+        <div class="boton" id="botonPantallaCompleta">
+          <img src= "../assets/fullscreen.png"></img>
+          <div>Pantalla completa</div>
+        </div>
+        <div class="boton" id="botonDesconectar">
+          <img src= "../assets/exit.png"></img>
+          <div>Desconectar</div>
+        </div>
+      </div>
+      
+    </div>
+    
+    
+  </body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+
+
+    <title>Hola mundo!</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="css/index.css">
+
+    <script defer src="../js/render.js"></script>
+  </head>
+  <body>
+    <h1 class="title">Prueba WebRTC</h1>
+    
+    <div>
+      <video></video>
+    </div>
+    <div class="cabecera">
+      <div class="texto">
+        Dato recibido:
+      </div>
+      <div>
+        <button id="connectBtn" class="button is-warning">
+          Conectar
+        </button>
+      </div>
+      
+    </div>
+    <div>
+      <p id="resultado" class="resultado">
+        ?
+      </p>
+    </div>
+    
+  </body>
+</html>

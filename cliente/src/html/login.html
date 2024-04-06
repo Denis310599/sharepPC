@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+
+
+    <title>SharePC</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="css/index.css">
+
+    <script defer src="../js/login-logic.js"></script>
+  </head>
+  <body>
+
+    <!--Modal de mensaje de alerta-->
+    <div id="modalAlertaUsuario" class="modal" style="display: none; z-index: 2;">
+      <div class="modal-content">
+        <div class="modal-header alert">
+          <h2 class="titulo-modal">Título de la alerta</h2>
+        </div>
+        <div class="modal-body alert">
+          <div class="mensaje">
+            Este es un mensaje de alerta y ya vere como lo estilizo
+          </div>
+          <div style="display: flex; justify-content: right; margin: 10px; margin-top: 30px;">
+            <button class="boton-cancelar alert" style="margin: 10px;">Cancelar</button>
+            <button class="boton-aceptar alert" style="margin: 10px;">Aceptar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--Modal de cargando-->
+    <div id="modalCargando" class="modal" style="display: none;  z-index: 3; padding-top: 35vh; padding-bottom: 40vh;">
+      <div class="modal-content" style="width: fit-content; overflow: hidden; padding: 30px;">
+        <div class="modal-header alert" style="box-shadow: none;">
+          <h2 class="titulo-modal">Cargando</h2>
+          <div class="lds-dual-ring" style="margin: 10px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal login -->
+    <div id="modalLogin" class="login-form">
+    
+    <div class="modal-content">
+      <div class="flip-card">
+        <div class="flip-card-inner">
+          <div class="pantalla-login flip-card-front">
+
+            <div class="modal-header">
+              <img class="logo"></img>
+              <h2 class="modal-header titulo-modal">SharePC</h2>
+            </div>
+            <div class="modal-body-grid">    
+
+              <!--Usuario -->
+              <div class="tipo-dato-form">Usuario</div>
+              <input type="text" class="input-dato usuario"></input>
+
+              <!--Contraseña -->
+              <div class="tipo-dato-form" >Contraseña</div>
+              <input type="password" class="input-dato contra"></input>
+
+              <!-- Mantener sesion -->
+              <div></div>
+              <div class="input-dato checkbox">
+                <input type="checkbox">
+                Mantener sesión iniciada
+              </div>
+            </div>
+
+            <div class="error-container-modal">
+              <div class="error-message disabled">Error</div>
+            </div>
+  
+            <div style="display: flex; justify-content: center; margin: 10px; margin-top: 30px;; ">
+              <button class="boton-cancelar" id="botonMoverCrearCuenta" style="margin: 10px;">Crear cuenta</button>
+              <button class="boton-aceptar"  id="botonLogin" style="margin: 10px;">Iniciar Sesion</button>
+            </div>
+            
+          </div>
+
+          <div class="pantalla-crea flip-card-back">
+            <div class="modal-header">
+              <img class="logo"></img>
+            </div>
+            <div class="modal-body-grid">    
+
+              <!--Correo -->
+              <div class="tipo-dato-form">Correo electrónico</div>
+              <input type="text" class="input-dato correo"></input>
+
+              <!--Usuario -->
+              <div class="tipo-dato-form">Usuario</div>
+              <input type="text" class="input-dato usuario"></input>
+
+              <!--Contraseña -->
+              <div class="tipo-dato-form">Contraseña</div>
+              <input type="password" class="input-dato contra"></input>
+
+              <!--Contraseña -->
+              <div class="tipo-dato-form">Repetir Contraseña</div>
+              <input type="password" class="input-dato rep-contra"></input>
+            </div>
+  
+            <div class="error-container-modal">
+              <div class="error-message disabled">Error</div>
+            </div>
+
+            <div style="display: flex; justify-content: center; margin: 10px; margin-top: 30px;; ">
+              <button id="botonCancelarCreacion" class="boton-cancelar" style="margin: 10px;">Cancelar</button>
+              <button id="botonCrearCuenta" class="boton-aceptar" style="margin: 10px;">Crear Cuenta</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</body>

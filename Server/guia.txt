@@ -1,0 +1,33 @@
+Para configurar el master:
+-ejecutar el maestro
+-hacer lo de copiar el fichero de configuracion porque si no peta, ya no deberia de petar.
+
+
+
+
+Pasos para configurar la máquina virtual cliente:
+-Creo un usuario test
+useradd -m -s /bin/bash -U test
+passwd test
+
+-Hago esta solucion: https://askubuntu.com/questions/1385440/ubuntu-sudo-apt-get-update-404-not-found-problem ( si el siguiente script no funciona)
+
+-Ejecuto el script de common.sh (con sudo)
+
+### Para crear el contenedor y que todos puedan acceder
+-creo la imagen con docker build
+
+-subo la imagen (primero docker login y despues:
+docker tag [OPTIONS] IMAGE[:TAG] [REGISTRYHOST/][USERNAME/]NAME[:TAG]
+docker push NAME[:TAG]
+
+-Creo los credenciales para kubermetes (una de las siguientes)
+kubectl create secret generic regcred --from-file=.dockerconfigjson=/vagrant/docker/config.json --type=kubernetes.io/dockerconfigjson
+kubectl create secret docker-registry regcred --docker-server=<your-registry-server> --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>
+
+-Configuro el fichero de deployment con las varialbes y los secrets
+
+### Para configurar el acceso de la API
+-Uso un cliente de Python
+-Exporto la configuracion en un kubeconfig (de ~/.kube/config)
+-Uso el config_file en el cliente.
