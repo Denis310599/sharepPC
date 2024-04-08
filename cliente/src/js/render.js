@@ -7,7 +7,8 @@ const textoEstado = document.querySelector('.texto-estado');
 
 const configuration = {
     'iceServers': [
-        {'url': 'stun:gusydenis.duckdns.org:3478',
+        {'urls': 'stun:stun.l.google.com:19302'},
+        {'url': 'turn:gusydenis.duckdns.org:3478',
             'username': 'sharepc',
             'credentials': 'sharepc1'}
     ]};

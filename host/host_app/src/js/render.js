@@ -13,7 +13,8 @@ const inicia = false;
 //resultado.innerText = "Holaa";
 const configuration = {
     'iceServers': [
-        {'url': 'stun:gusydenis.duckdns.org:3478',
+        {'urls': 'stun:stun.l.google.com:19302'},
+        {'url': 'turn:gusydenis.duckdns.org:3478',
             'username': 'sharepc',
             'credentials': 'sharepc1'}
     ]};
@@ -486,8 +487,8 @@ function enviaPeticionAPI(peticion, tk, callback){
  * Funcion que envia una respuesa a un keepalive al servidor
  */
 function enviaKeepAlive(){
-    const mensajeFinal = { 'tipo': 3, 'origen': id_origen};
+    const mensajeFinal = { 'tipo': 3, 'origen': idOrigen};
 
     const msgTxt = JSON.stringify(mensajeFinal);
-    signaling_channel.send(msgTxt);
+    signalingChannel.send(msgTxt);
 }
