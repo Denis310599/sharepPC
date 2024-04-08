@@ -538,7 +538,7 @@ ipcRenderer.on('global-variables', (e, variables)=>{
   token = variables.get('token');
   host_WS = variables.get('host_WS');
   destino_llamada = variables.get('id_contenedor');
-  destino_llamada = "denisc-1712161354"
+
 
   console.log("Variables globales obtenidas");
   variables.forEach((v, k, m) =>{
