@@ -13,8 +13,9 @@ const inicia = false;
 //resultado.innerText = "Holaa";
 const configuration = {
     'iceServers': [
-        {'urls': 'stun:stun1.l.google.com:19302'},
-        {'urls': 'stun:stun2.l.google.com:19302' }
+        {'url': 'stun:gusydenis.duckdns.org:3478',
+            'username': 'sharepc',
+            'credentials': 'sharepc1'}
     ]};
 
 
@@ -24,8 +25,10 @@ const contenedorPath = '/Test/contenedor';
 //var idDestino;
 var idOrigen = process.env.IDOG;//"denisCont#1710429524";
 var token = process.env.TOKEN;//"CNT-17104jxawjqdgughltpdqnxmw29524";
-idOrigen = "denisc-1711984451";
-token = "CNT-17119qrmebeyohzjwahgsrnhm84451";
+token = "CNT-17121ytogpsexxwprqwnughxn61354";
+idOrigen = "denisc-1712161354";
+//idOrigen = "denisc-1711984451";
+//token = "CNT-17119qrmebeyohzjwahgsrnhm84451";
 ipcRenderer.send("log", "OG: " + idOrigen + " token: " + token);
 var signalingChannel;
 var conexiones = new Map(); //{pC: pC, dC: dC, iniciador: true/false}

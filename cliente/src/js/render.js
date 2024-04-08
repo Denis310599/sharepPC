@@ -7,8 +7,9 @@ const textoEstado = document.querySelector('.texto-estado');
 
 const configuration = {
     'iceServers': [
-        {'urls': 'stun:stun1.l.google.com:19302'},
-        {'urls': 'stun:stun2.l.google.com:19302' }
+        {'url': 'stun:gusydenis.duckdns.org:3478',
+            'username': 'sharepc',
+            'credentials': 'sharepc1'}
     ]};
 
 
@@ -535,7 +536,8 @@ ipcRenderer.on('global-variables', (e, variables)=>{
   token = variables.get('token');
   host_WS = variables.get('host_WS');
   destino_llamada = variables.get('id_contenedor');
-  
+  destino_llamada = "denisc-1712161354"
+
   console.log("Variables globales obtenidas");
   variables.forEach((v, k, m) =>{
     console.log(k + ": " + v);

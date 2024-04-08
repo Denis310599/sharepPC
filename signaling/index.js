@@ -6,7 +6,7 @@ host = 'hqna10txtk.execute-api.eu-west-3.amazonaws.com';
 contenedorPath = '/Test/contenedor';
 
 const MAX_KEEPALIVE = 5;
-const KEEPALIVE_INTERVAL = 5;//s
+const KEEPALIVE_INTERVAL = 60;//s
 
 var mapaSockets = new Map();
 

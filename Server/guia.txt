@@ -31,3 +31,21 @@ kubectl create secret docker-registry regcred --docker-server=<your-registry-ser
 -Uso un cliente de Python
 -Exporto la configuracion en un kubeconfig (de ~/.kube/config)
 -Uso el config_file en el cliente.
+
+
+
+
+##### Configuracion del Servidor Final
+-Comenzamos instalando kubernetes en un contenedor docker. Para ello creamos el servicio en /etc/Systemd/system/masternode.service.
+[Unit]
+Description=Comienza el bootstrap para el master node
+
+[Service]
+Type=simple
+ExecStart=/home/dockers/scripts/dockerBS.sh
+
+[Install]
+WantedBy=multi-user.target
+
+Configuramos systemd, dando los permisos necesarios al fichero service
+
