@@ -1,0 +1,22 @@
+{
+  "name": "webrtc_linux2",
+  "version": "1.0.0",
+  "description": "Proyecto host de prueba",
+  "main": "src/js/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron . --no-sandbox"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^29.1.1"
+  },
+  "dependencies": {
+    "@nut-tree/nut-js": "^3.1.2",
+    "https": "^1.0.0",
+    "path": "^0.12.7",
+    "robotjs": "^0.6.0",
+    "ws": "^8.16.0"
+  }
+}
