@@ -58,6 +58,11 @@ ipcMain.on('mouse-action', (event, data) =>{
   realizaAccionMouse(data);
 });
 
+//Handler de accion de mouse
+ipcMain.on('wheel-action', (event, data) =>{
+    realizaAccionWheel(data);
+});
+  
 //Handler de accion de teclado
 ipcMain.on('key-action', (event, data) =>{
   realizaAccionTeclado(data);
@@ -75,6 +80,14 @@ async function getVideoSoruces(event){
   //videoOptionsMenu.popup({ window: BrowserWindow.fromWebContents(event.sender) });
 }
 
+async function realizaAccionWheel(json_recibido){
+    if(json_recibido.datos.evento == "x"){
+        mouse.scrollRight(json_recibido.datos.scroll);
+    }else{
+
+        mouse.scrollDown(json_recibido.datos.scroll);
+    }
+}
 
 async function realizaAccionMouse(json_recibido){
   //console.log("En realizando accion Mouse");

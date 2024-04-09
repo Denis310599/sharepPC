@@ -140,11 +140,12 @@ async function configuraPeerConnection(peerConnection, idDestino){
                 textoEstado.style.display = "none";
                 break;
             case 'disconnected':
-            case 'closed':
-            case 'failed':
                 //En caso que falle, dejamos de mostrar el video
                 videoElement.style.display = "none";
                 textoEstado.style.display = "block";
+                break;
+            case 'closed':
+            case 'failed':
                 break;
         }
     });
@@ -176,6 +177,7 @@ async function configuraPeerConnection(peerConnection, idDestino){
 
     if(conexiones.has(idDestino)){
         var conexion = conexiones.get(idDestino);
+        conexion.pc.close();
         conexion.pc = peerConnection;
     }else{
         var conexion = {'pc': peerConnection};
@@ -451,6 +453,8 @@ function configuraRDP(idDestino){
         console.log(JSON.stringify(mensaje))
         conexiones.get(idDestino).dc.send(JSON.stringify(mensaje));
     });
+
+    videoElement.addEventListener("wheel", (e)=> enviaMovimientoRueda(e, conexiones.get(idDestino).dc));
 }
 
 /**
@@ -520,6 +524,36 @@ function getMousePositionUnitary(e){
     const pos_relativa_unit_x = x/size.width;
     const pos_relativa_unit_y = y/size.height;
     return [pos_relativa_unit_x, pos_relativa_unit_y];
+}
+
+/**
+ * Gestiona el movimiento de la rueda del raton
+ * @param {WheelEvent} e 
+ * @param {RTCDataChannel} dCh 
+ */
+function enviaMovimientoRueda(e, dCh){
+    const scrollX = e.deltaX;
+    const scrollY = e.deltaY;
+    const scrollZ = e.deltaZ;
+
+    const evento = scrollY != 0 ? "y" : "x";
+    let scroll = scrollY != 0 ? scrollY : scrollX;
+
+    if(scroll > 0){
+        scroll = 1;
+    }else{
+        scroll = -1;
+    }
+    const mensaje = {
+        'tipo': 'wheel',
+        'datos': {
+            'evento': evento,
+            'scroll': scroll
+        }
+    }
+    console.log("Rueda girada: ");
+    console.log(mensaje);
+    dCh.send(JSON.stringify(mensaje));
 }
 
 

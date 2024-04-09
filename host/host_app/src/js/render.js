@@ -27,8 +27,8 @@ const contenedorPath = '/Test/contenedor';
 //var idDestino;
 var idOrigen = process.env.IDOG;//"denisCont#1710429524";
 var token = process.env.TOKEN;//"CNT-17104jxawjqdgughltpdqnxmw29524";
-//token = "CNT-17121ytogpsexxwprqwnughxn61354";
-//idOrigen = "denisc-1712161354";
+//token = "CNT-17126xwzojlsyzrqtkypwsdji62942";
+//idOrigen = "denisc-1712662942";
 //idOrigen = "denisc-1711984451";
 //token = "CNT-17119qrmebeyohzjwahgsrnhm84451";
 ipcRenderer.send("log", "OG: " + idOrigen + " token: " + token);
@@ -208,6 +208,7 @@ async function configuraPeerConnection(peerConnection, idDestino){
 
     if(conexiones.has(idDestino)){
         var conexion = conexiones.get(idDestino);
+        conexion.pc.close();
         conexion.pc = peerConnection;
     }else{
         var conexion = {'pc': peerConnection};
@@ -281,9 +282,16 @@ async function configuraSignalingChannel(){
             }else if(json_recibido.contenido.offer){
                 //Se recibe una nueva oferta
                 console.log("Oferta recibida")
+
+
+                //Un cliente quiere contactar conmigo, comienzo una nueva llamada a ese cliente.
+                comienzaLlamada(json_recibido.origen);
+
+                return;
                 //Se comprueba si la conexion existe
                 let conexion;
 
+                
                 const pc = new RTCPeerConnection(configuration);
                 await configuraPeerConnection(pc, json_recibido.origen);
                 conexion = conexiones.get(json_recibido.origen);
@@ -432,6 +440,8 @@ function procesaMensajeDataChannel(data){
 
         }else if(json_recibido.tipo === 'keyboard'){
             ipcRenderer.send('key-action', json_recibido);
+        }else if(json_recibido.tipo === 'wheel'){
+            ipcRenderer.send('wheel-action', json_recibido);
         }
     }catch(error){
         //Error al parsear el json
