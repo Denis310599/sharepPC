@@ -5,7 +5,7 @@ set -euxo pipefail
 
 # Variable Declaration
 
-KUBERNETES_VERSION="1.29.2-00"
+KUBERNETES_VERSION="1.29.2-00			"
 
 # disable swap
 swapoff -a

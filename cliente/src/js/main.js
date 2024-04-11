@@ -1,9 +1,8 @@
-const { app, BrowserWindow, ipcMain, Menu} = require('electron/main');
+const { app, BrowserWindow, ipcMain, Menu, dialog} = require('electron/main');
 const path = require('node:path');
 const { desktopCapturer } = require('electron/main');
 const { create } = require('node:domain');
 const fs = require('fs');
-
 
 //Variables almacenadas necesarias para la aplicacion
 let session_id = "denis#1710420242";
@@ -156,6 +155,194 @@ ipcMain.on('set-sesion-persistente', (e, token, id) =>{
     }
   }
 });
+
+//Obtencion del id de sesion que tiene la maquina virtual
+ipcMain.on('get-mv-id', (e) => {
+  console.log("Obteniendo datos de mquina virtual");
+  let ret = new Map();
+  try {
+    const data = fs.readFileSync(USER_DATA_PATH, 'utf-8');
+    const dataJSON = JSON.parse(data);
+    console.log(dataJSON)
+    if(dataJSON.mv_id){
+      ret.set('mv_id', dataJSON.mv_id);
+    }else{
+      ret = null;
+    }
+    
+  } catch(error) {
+    console.log('Error retrieving user data', error);  
+    // you may want to propagate the error, up to you
+    ret = null;
+  }
+
+  console.log(ret)
+
+  e.sender.send('return-mv-id', ret);
+});
+
+//Almacena el id de la sesion que tiene maquina virtual
+ipcMain.on('set-mv-id', (e, id) =>{
+  try {
+    console.log("Escribiendo en fichero de configuracion...");
+    const data = fs.readFileSync(USER_DATA_PATH, 'utf-8');
+    const dataJSON = JSON.parse(data);
+
+    //Si no hay token elimino el que esta
+    if(id == ""){
+      delete dataJSON.mv_id;
+    }else{
+      dataJSON.mv_id = mv_id;
+    }
+    
+    fs.writeFileSync(USER_DATA_PATH, JSON.stringify(dataJSON));
+  } catch(error) {
+    console.log('Error retrieving user data', error);  
+    // No hay datos, por lo que tengo que escribirlos
+    if(id != ""){
+      const datosEscribir = {'mv_id': id};
+      fs.writeFileSync(USER_DATA_PATH, JSON.stringify(datosEscribir));
+    }
+  }
+});
+
+
+//Almacena el path de la maquina virtual
+ipcMain.on('set-mv-path', (e, path) =>{
+  try {
+    console.log("Escribiendo en fichero de configuracion...");
+    const data = fs.readFileSync(USER_DATA_PATH, 'utf-8');
+    const dataJSON = JSON.parse(data);
+
+    //Si no hay token elimino el que esta
+    if(path == ""){
+      delete dataJSON.mv_path;
+    }else{
+      dataJSON.mv_id = mv_path;
+    }
+    
+    fs.writeFileSync(USER_DATA_PATH, JSON.stringify(dataJSON));
+  } catch(error) {
+    console.log('Error retrieving user data', error);  
+    // No hay datos, por lo que tengo que escribirlos
+    if(id != ""){
+      const datosEscribir = {'mv_path': path};
+      fs.writeFileSync(USER_DATA_PATH, JSON.stringify(datosEscribir));
+    }
+  }
+});
+
+//Obtencion del path de la maquina virtual
+ipcMain.on('get-mv-path', (e) => {
+  console.log("Obteniendo datos de mquina virtual");
+  let ret = new Map();
+  try {
+    const data = fs.readFileSync(USER_DATA_PATH, 'utf-8');
+    const dataJSON = JSON.parse(data);
+    console.log(dataJSON)
+    if(dataJSON.mv_path){
+      ret.set('mv_id', dataJSON.mv_path);
+    }else{
+      ret = null;
+    }
+    
+  } catch(error) {
+    console.log('Error retrieving user data', error);  
+    // you may want to propagate the error, up to you
+    ret = null;
+  }
+
+  console.log(ret)
+
+  e.sender.send('return-mv-path', ret);
+});
+
+//Permite al usuario seleccionar una ruta
+ipcMain.on('ask-mv-path', async (e)=>{
+  dialog.showOpenDialog(win, {title: "Ubicacion nueva MV",properties: ['openDirectory']})
+    .then(result => {
+      let res = "";
+      if(!result.canceled){
+        res = result.filePaths[0];
+      }
+
+      //Envio de vuelta el pach
+      e.sender.send('return-mv-path', ret);
+    });
+});
+
+//Almacena los datos de una MV en el vagrantfile
+ipcMain.on('apply-mv-params', async (e, url, cpus, memoria)=>{
+  //Obtengo el ID
+  let id;
+  try {
+    const data = fs.readFileSync(USER_DATA_PATH, 'utf-8');
+    const dataJSON = JSON.parse(data);
+    console.log(dataJSON)
+    if(dataJSON.mv_id){
+      id = dataJSON.mv_id;
+    }else{
+      id = null;
+    }
+    
+  } catch(error) {
+    console.log('Error, no hay ningun id almacenado', error);  
+    // you may want to propagate the error, up to you
+    id = null;
+  }
+
+  if(id === null){
+    e.sender.send('complete-mv-params', null)
+    return;
+  }
+  //Muevo el VagrantFile hasta la URL
+  const pathVagrantFile = path.join(__dirname,'../assets/Vagrantfile');
+  try{
+    const contenidoVagrantfile = fs.readFileSync(pathVagrantFile, 'utf-8');
+    fs.writeSync(url+"/Vagrantfile", contenidoVagrantfile);
+  }catch(e){
+    console.log("Error al copiar el vagrantfile");
+    e.sender.send('complete-mv-params', null)
+    return;
+  }
+
+  //Abro el fichero en la URL
+  fs.readFile(url + "/Vagrantfile", 'utf8', (err, vagrantFile)=>{
+    if(err){
+      console.log("Error abriendo el vagrantfile");
+      e.sender.send('complete-mv-params', null);
+      return;
+    }
+
+    //Cambio el ID
+    let datosModificados = vagrantFile.replace(
+      /config.vm.hostname = ".+"/,
+      'config.vm.hostname = "' + id + '"'
+    );
+
+    //Cambio memo y cpus
+    datosModificados = datosModificados.replace(
+      /vb.memory = ".+"/,
+      'vb.memory = "' + memoria + '"'
+    );
+
+    datosModificados = datosModificados.replace(
+      /vb.cpus = ".+"/,
+      'vb.memory = "' + cpus + '"'
+    );
+
+    fs.writeFile(url + "/Vagrantfile", datosModificados, 'utf8', (error) =>{
+      if(error){
+        console.log("Error al escribir el vagrantfile");
+        e.sender.send('complete-mv-params', null);
+      }else{
+        console.log("Vagrantfile escrito correctamente");
+        e.sender.send('complete-mv-params', 0);
+      }
+    });
+  });  
+});
+
 
 //Funcion que abre un menu
 async function createSourceVideoSelector(event){

@@ -218,6 +218,48 @@ body {
   height: fit-content;
   width: fit-content;
 }
+
+/*Boton de ajustes*/
+.settings div {
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  background-color: var(--bgColor);
+}
+
+.settings div button {
+  height: 40px;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bgColor);
+  border: solid;
+  border-radius: 20%;
+  border-color: var(--elem1Color);
+  border-width: 1px;
+  cursor: pointer;
+  transition: all var(--buttonTransitionTime);
+}
+
+.settings div button:hover {
+  box-shadow: var(--elem2Color) 0px 0px 16px 2px;
+  border-color: var(--elem2Color);
+  transform: translateY(-1px);
+}
+
+.settings div button:active {
+  box-shadow: none;
+  border-color: var(--elem1Color);
+  transform: translateY(1px);
+}
+
+.settings div button img {
+  content: url(../../assets/setting.svg);
+  height: 30px;
+  width: 30px;
+  filter: invert(76%) sepia(19%) saturate(140%) hue-rotate(191deg) brightness(90%) contrast(89%);
+}
 /*##########################################################################################################
 ##########################################################################################################
 
@@ -272,59 +314,94 @@ body {
   font-weight: bold;
 }
 
-/*Boton de recargar*/
-.header-top .boton-cancelar {
-  background-color: var(--bgColor);
-}
-
-.header-top .boton-cancelar:disabled {
-  color: var(--elem1Color)
-}
 
 /*Boton de ajustes*/
 .header-top.settings {
   margin-right: 20px;
 }
 
-.header-top.settings div {
-  width: fit-content;
-  display: flex;
-  align-items: center;
-  background-color: var(--bgColor);
+
+
+/*Boton de seleccion de modo*/
+/* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
 }
 
-.header-top.header-top.settings div button {
-  height: 40px;
-  width: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--bgColor);
-  border: solid;
-  border-radius: 20%;
-  border-color: var(--elem1Color);
-  border-width: 1px;
+/* Hide default HTML checkbox */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The slider */
+.slider {
+  position: absolute;
   cursor: pointer;
-  transition: all var(--buttonTransitionTime);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--elem1Color);
+  box-shadow: var(--subBgColor) 0px 0px 5px 1px inset;
+  -webkit-transition: .4s;
+  transition: .4s;
+
+  overflow: hidden;
 }
 
-.header-top.header-top.settings div button:hover {
-  box-shadow: var(--elem2Color) 0px 0px 16px 2px;
-  border-color: var(--elem2Color);
-  transform: translateY(-1px);
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: var(--bgColor);
+  
+
+  -webkit-transition: .4s;
+  transition: .4s;
 }
 
-.header-top.header-top.settings div button:active {
-  box-shadow: none;
-  border-color: var(--elem1Color);
-  transform: translateY(1px);
+input:checked + .slider {
+  background-color: var(--elem1Color);
+  box-shadow: var(--colorPrimarioClaro2) 0px 0px 40px -5px inset;
 }
 
-.header-top.settings div button img {
-  content: url(../../assets/setting.svg);
-  height: 30px;
-  width: 30px;
-  filter: invert(76%) sepia(19%) saturate(140%) hue-rotate(191deg) brightness(90%) contrast(89%);
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
+  background-color: var(--colorPrimarioOscuro);
+  border: solid;
+  border-width: 1px;
+  border-color: var(--colorPrimarioOscuro);
+
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/*Texto selector de modo*/
+.texto-header{
+  color: var(--elem2Color);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.texto-header.disabled{
+  color: var(--elem1Color);
 }
 
 /*###################################################################################
@@ -475,7 +552,7 @@ body {
   margin-right: 10px;
 }
 
-.contenido-tarjeta.tipo-dato {
+.tipo-dato {
   height: fit-content;
   width: fit-content;
   color: var(--elem2Color);
@@ -488,7 +565,7 @@ body {
   margin-top: 5px;
 }
 
-.contenido-tarjeta.valor-dato {
+.valor-dato {
   height: fit-content;
   width: fit-content;
   color: var(--elem2Color);
@@ -565,6 +642,55 @@ body {
 }
 
 
+
+/*###################################################################################
+        Compartir pc
+#####################################################################################*/
+/*Animacion para pasar de un lado a otro*/
+.contenedor-share{
+  transition: transform var(--messageTransitionTime) ease-in-out;
+}
+
+.contenedor-share.disabled{
+  transform: translateX(100%);
+}
+
+.contenedor-conexiones-padre{
+  transition: transform var(--messageTransitionTime) ease-in-out;
+
+}
+
+.contenedor-conexiones-padre.disabled{
+  transform: translateX(-100%);
+  
+}
+
+.contenedor-conexiones-padre, .contenedor-share{
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100vw;
+}
+
+
+/*Layout informativo*/
+.contenedor-share .datos-contenedor{
+  height: fit-content;
+  display: grid;
+  grid-template-columns: fit-content(100%) auto;
+  margin-top: 20px;
+  margin-left: 20px;
+  margin-right: 10px;
+}
+
+.datos-contenedor .tipo-dato, .valor-dato{
+  font-size: 20px;
+}
+
+/*Botones*/
+.contenedor-share .settings{
+  display: flex;
+}
 /*###################################################################################
         Modal Generico
 #####################################################################################*/

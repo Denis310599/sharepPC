@@ -19,14 +19,16 @@
           <s1 class="texto-titulo">SharePC</s1>
         </div>
       </div>
-        <div class="header-top" style="padding: 20px;">
-          <button class="boton-cancelar" id="botonRecargar">
-            Recargar
-          </button>
-        </div>
-      <div>
 
+      <div style="width: fit-content; height: 100%; margin-left: 0; margin-right: auto; display: flex; justify-content: center; align-items: center;">
+        <s1 class="texto-header cliente">Cliente</s1>
+        <label class="switch" style="margin: 20px;">
+          <input id="switchModo" type="checkbox">
+          <span class="slider round"></span>
+        </label>
+        <s1 class="texto-header host disabled">Host</s1>
       </div>
+
       <div class="header-top user">
         <div>
           <s1 id="textoUsuario" class="texto-nombre-usuario">Denis31599</s1>
@@ -44,9 +46,16 @@
     <div style="height: 2px; background-color: var(--elem1Color);"></div>
 
 
+    
+    
     <!-- Contenedor de las conexiones remotas-->
-    <div style="overflow-y: auto; height: calc(100vh - 72px);">
+    <div class ="contenedor-conexiones-padre" style="overflow-y: auto; height: calc(100vh - 72px);">
       
+      <div style="height: 60px; display: flex;align-items: center; justify-content: right; margin-right: 20px;">
+        <button class="boton-cancelar" id="botonRecargar">
+          Recargar
+        </button>
+      </div>
 
       <template id="tarjetaConexionTemplate">
         <div class="tarjeta-conexion">
@@ -90,6 +99,33 @@
         </div>
       </div>
     </div>    
+
+    <!-- Contenedor de compartir pc-->
+    <div class="contenedor-share disabled" style="overflow-y: auto; height: calc(100vh - 72px);">
+      <div class="datos-contenedor">
+        <div class="tipo-dato">Estado</div>
+        <div class="valor-dato">Encendido/Apagado</div>
+        <div class="tipo-dato">Ubicación</div>
+        <div class="valor-dato">C:/Users/Denis/ruta...</div>
+        <div class="tipo-dato">CPUs</div>
+        <div class="valor-dato">4</div>
+        <div class="tipo-dato">Memoria</div>
+        <div class="valor-dato">4096 Mb</div>
+      </div>
+
+      <div style="position: absolute;  display: flex; justify-content: center; bottom: 0; right: 0; left: 0;">
+        <div class="settings">
+          <div>
+            <button>
+              <img id="botonSettingsCompartir"></img>
+            </button>
+          </div>
+        </div>
+        <button id="botonCompartirPC" class="boton-aceptar" style="margin: 20px;">Compartir PC</button>
+      </div>
+
+    </div>
+
     <!-- Modal de creación de contenedor-->
     <div id="modalCreacionContenedor" class="modal">
       <div class="modal-content">
@@ -288,6 +324,126 @@
         </div>
         <div style="display: flex; justify-content: center; margin: 10px; margin-top: 30px;">
           <button id="botonCancelarCreacionContenedor" class="boton-cancelar" style="margin: 10px;">Cancelar</button>
+        </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de ajustes compartir-->
+    <div id="modalAjustesCompartir" class="modal" style="display: none; ">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-header titulo-modal">Ajustes Máquina Virtual</h2>
+          <div class="modal-header separador"></div>
+        </div>
+        <div class="modal-body">
+          <div class="modal-body-grid"> 
+
+            <div class="tipo-dato-form">Ubicación MV</div>
+            <input type="text" class="input-dato ruta-mv" disabled></input>
+            
+            <!-- Memoria -->
+            <div class="tipo-dato-form">Memoria</div>
+            <div style="align-self: center; display: flex;">
+              <div class="custom-input-number">
+                <input class="input-mem-size" type="number" value="4096" min="512" max="32768" step="512" style="width: 100px;"></input>
+                <div>
+                  <button class="custom-input-number-increment">
+                    <img></img>
+                  </button>
+                  <button class="custom-input-number-decrement">
+                    <img style="transform: rotate(-90deg);"></img>
+                  </button>
+                </div>
+              </div>
+              <select class="selector input-mem-type" style="width: fit-content; margin-left: 5px;" value="Mi">
+                <option value="Gi">Gi</option>
+                <option value="Mi" selected="selected">Mi</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <!--CPUs-->
+            <div class="tipo-dato-form">CPUs</div>
+            <div class="custom-input-number">
+              <input class ="input-cpus" type="number" value="4" min="1" max="32" step="1" style="width: 60px;"></input>
+              <div>
+                <button class="custom-input-number-increment">
+                  <img></img>
+                </button>
+                <button class="custom-input-number-decrement">
+                  <img style="transform: rotate(-90deg);"></img>
+                </button>
+              </div>
+            </div>
+
+          <div class="tipo-dato-form">Eliminar máquina virtual</div>
+          <button class="boton-eliminar">Eliminar MV</button> 
+        </div>
+        <div style="display: flex; justify-content: center; margin: 10px; margin-top: 30px;">
+          <button class="boton-cancelar" style="margin: 10px;">Cancelar</button>
+          <button class="boton-aceptar" style="margin: 10px;">Guardar</button>
+        </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de crear MV-->
+    <div id="modalCrearMV" class="modal" style="display: none; ">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-header titulo-modal">Crear Máquina Virtual</h2>
+          <div class="modal-header separador"></div>
+        </div>
+        <div class="modal-body">
+          <div class="modal-body-grid"> 
+            <!-- Memoria -->
+            <div class="tipo-dato-form">Ubicación MV</div>
+            <input type="text" class="input-dato ruta-mv"></input>
+
+            <div class="tipo-dato-form">Memoria</div>
+            <div style="align-self: center; display: flex;">
+              <div class="custom-input-number">
+                <input class="input-mem-size" type="number" value="4096" min="512" max="32768" step="512" style="width: 100px;"></input>
+                <div>
+                  <button class="custom-input-number-increment">
+                    <img></img>
+                  </button>
+                  <button class="custom-input-number-decrement">
+                    <img style="transform: rotate(-90deg);"></img>
+                  </button>
+                </div>
+              </div>
+              <select class="selector input-mem-type" style="width: fit-content; margin-left: 5px;" value="Mi">
+                <option value="Gi">Gi</option>
+                <option value="Mi" selected="selected">Mi</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <!--CPUs-->
+            <div class="tipo-dato-form">CPUs</div>
+            <div class="custom-input-number">
+              <input class ="input-cpus" type="number" value="4" min="1" max="32" step="1" style="width: 60px;"></input>
+              <div>
+                <button class="custom-input-number-increment">
+                  <img></img>
+                </button>
+                <button class="custom-input-number-decrement">
+                  <img style="transform: rotate(-90deg);"></img>
+                </button>
+              </div>
+            </div>
+
+        </div>
+
+        <div class="error-container-modal">
+          <div class="error-message disabled">Error</div>
+        </div>
+
+        <div style="display: flex; justify-content: center; margin: 10px; margin-top: 30px;">
+          <button class="boton-cancelar" style="margin: 10px;">Cancelar</button>
+          <button class="boton-aceptar" style="margin: 10px;">Crear</button>
         </div>
         </div>
       </div>

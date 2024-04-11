@@ -8,6 +8,7 @@ const modal_creacion = document.getElementById("modalCreacionContenedor");
 const modal_edicion = document.getElementById("modalEdicionContenedor");
 const modal_alerta = document.getElementById("modalAlertaUsuario");
 const modal_cargando = document.getElementById("modalCargando");
+const modal_crear_mv = document.getElementById("modalCrearMV");
 
 const boton_recargar = document.getElementById("botonRecargar");
 const boton_creacion = modal_creacion.querySelector(".boton-aceptar");
@@ -16,6 +17,8 @@ const boton_guardar_edicion = modal_edicion.querySelector(".boton-aceptar");
 
 const boton_ajustes = document.getElementById("botonSettings");
 const boton_cerrar_sesion = document.getElementById("modalAjustes").querySelector(".boton-eliminar");
+
+const boton_compartir_pc = document.getElementById("botonCompartirPC");
 
 //Definimos los objetos globales
 
@@ -563,25 +566,45 @@ function botonGuardarEdicionPulsado(){
  * @param {Boolean} [resetDatos=true] Si se deben resetear los datos del modal o no
  */
 function resetModal(modal, salir, muestraError=false, resetDatos=true){
-  //Se obtienen los parametros del DOM
-  const mem_s = modal.querySelector(".input-mem-size");
-  const mem_t = modal.querySelector(".input-mem-type");
-  const nombre = modal.querySelector(".nombre-contenedor");
-  const cpus = modal.querySelector(".input-cpus");
-
+  const mensajeError = modal.querySelector(".error-message");
   const botonGuardar = modal.querySelector(".boton-aceptar");
   const botonSalir = modal.querySelector(".boton-cancelar");
-  const botonEliminar = modal.querySelector(".boton-eliminar");
-  const mensajeError = modal.querySelector(".error-message")
 
-  //Se resetean todos los parametros
-  if (resetDatos){
-    mem_s.value = 4096;
-    mem_t.value = "Mi";
-    cpus.value = 4;
-    nombre.value = "";
+  if(modal == modal_crear_mv){
+    //Congig especifica del de creacion de mv
+    const mem_s = modal.querySelector(".input-mem-size");
+    const mem_t = modal.querySelector(".input-mem-type");
+    const url = modal.querySelector(".ruta-mv");
+    const cpus = modal.querySelector(".input-cpus");
+
+    if(resetDatos){
+      mem_s.value = 4096;
+      mem_t.value = "Mi";
+      cpus.value = 4;
+      url.value = "";
+    }
+    return;
+  }else{
+    //Config especifica de los modales de crear y editar contenedor
+    //Se obtienen los parametros del DOM
+    const mem_s = modal.querySelector(".input-mem-size");
+    const mem_t = modal.querySelector(".input-mem-type");
+    const nombre = modal.querySelector(".nombre-contenedor");
+    const cpus = modal.querySelector(".input-cpus");
+
+    const botonEliminar = modal.querySelector(".boton-eliminar");
+
+    //Se resetean todos los parametros
+    if (resetDatos){
+      mem_s.value = 4096;
+      mem_t.value = "Mi";
+      cpus.value = 4;
+      nombre.value = "";
+    }
   }
 
+
+  
   botonGuardar.disabled = false;
   botonSalir.disabled = false;
   
@@ -724,16 +747,210 @@ function hideDialogCargando(){
     modal_cargando.querySelector('.modal-content').classList.remove("out");
   }
 }
+
+/**
+ * Función que gestiona el comportamiento del botón de cambiar de modo
+ * 
+ */
+function switchModoPulsado(){
+  console.log("Cambiando modo de operacion");
+
+  //Obtengo los elementos que voy a necesitar
+  const checkbox = document.getElementById("switchModo");
+
+  const txtCliente = document.querySelector(".texto-header.cliente");
+  const txtHost = document.querySelector(".texto-header.host");
+  const panelConexiones = document.querySelector(".contenedor-conexiones-padre");
+  const panelShare = document.querySelector(".contenedor-share");
+  
+
+  //Mostramos una pantalla u otra segun el switch este activo o no
+  if(checkbox.checked == true){
+    //Se puede cambiar a modo host si no tengo ningun contenedor remoto
+    if(lista_maquinas.length != 0){
+      checkbox.checked = false;
+      return
+    }
+
+    txtCliente.classList.add("disabled");
+    txtHost.classList.remove("disabled");
+    panelConexiones.classList.add("disabled");
+    panelShare.classList.remove("disabled");
+  }else{
+    //Se puede cambiar de modo si la MV no está en funcionamiento
+
+    txtHost.classList.add("disabled");
+    txtCliente.classList.remove("disabled");
+    panelConexiones.classList.remove("disabled");
+    panelShare.classList.add("disabled");
+
+  }
+}
+
+/**
+ * Función que comienza a compartir un PC. Arranca la maquina virtual y la configura en caso de ser necesario.
+ */
+function comenzarCompartirPC(){
+  //Comprueba si existe una maquina virtual creada ya
+  ipcRenderer.send('get-mv-id');
+
+  ipcRenderer.on('return-mv-id', (e, datos)=>{
+    if(datos !== null){
+      //Si existe el id, existe una maquina, y por tanto la arranco
+    }else{
+      //Si no existe ninguna maquina creada la creo de nuevo
+      creaMvCompartir();
+    }
+  });
+
+  //Si no existe todavia ninguna maquina virtual...
+}
+
+/**
+ * Función que crea una nueva máquina virtual para compartir el pc
+ */
+function creaMvCompartir(){
+  //Comprueba si vagrant está instalado
+
+  //Comprueba si VBox está instalado
+
+  //Muestra el panel de configuracion de la maquina virtual
+  muestraYConfiguraModalCreacionMV();
+  
+  //Configura el script de kubejoin 
+   
+}
+
+
+/**
+ * Funcion que muestra y configura el modal de creacion de MV
+ */
+function muestraYConfiguraModalCreacionMV(){
+  let pathMV;
+
+  //Mostramos el modal con todas las animaciones posibles
+  modal_crear_mv.style.display = "block";
+  
+  modal_crear_mv.classList.add("in");
+  modal_crear_mv.querySelector('.modal-content').classList.add("in");
+    
+    modal_crear_mv.onanimationend = ()=>{
+      modal_crear_mv.classList.remove("in");
+      modal_crear_mv.querySelector('.modal-content').classList.remove("in");
+  }
+
+  //Obtencion de los datos
+  //URL
+  modal_crear_mv.querySelector(".input-dato.ruta-mv").onclick = ()=>{
+    ipcRenderer.send('ask-mv-path');
+
+    ipcRenderer.on('return-path', (e, path)=>{
+      pathMV = path;
+      modal_crear_mv.querySelector(".input-dato.ruta-mv").value = pathMV;
+    })
+  }
+
+  //CPU y RAM
+  const memSize = modal_crear_mv.querySelector(".input-mem-size");
+  const memType = modal_crear_mv.querySelector(".input-mem-type");
+  const cpus = modal_crear_mv.querySelector(".input-cpus");
+
+  const mensajeError = modal_crear_mv.querySelector(".error-message");
+
+  modal_crear_mv.querySelector(".boton-aceptar").onclick = ()=>{
+    if(pathMV != ""){
+      //Valido y obtengo los valores de los campos
+      if(!Number.isInteger(cpus.value) || !Number.isInteger(memType.value)){
+        //Error al procesar los datos
+        mensajeError.textContent = "Error, el numero de CPUs y la Memoria especificada deben ser numeros enteros positivos";
+        resetModal(modal_crear_mv, false, true, false);
+        return;
+      }
+      //Guarda la informacion de la MV y la arranca cuando este todo gucci
+      guardaDatosMV(pathMV, parseInt(memSize.value)*(memType.value == "Mi" ? 1: 1024), parseInt(cpus.value));
+    }else{
+      mensajeError.textContent = "Error: Debe espicifar una ruta para la MV.";
+      resetModal(modal_crear_mv, false, true, false);
+      return;
+    }
+  };
+
+  modal_crear_mv.querySelector(".boton-cancelar").onclick = ()=>{resetModal(modal_crear_mv, true, false, true)};
+}
+
+/**
+ * Funcion que actualiza la informacion almacenada sobre una maquina virtual.
+ * Si la url existe, se sobreescribe con la nueva y se edita ahi  * @param {string} pathMV 
+ * @param {Int} ram 
+ * @param {Int} cpu 
+ * @param {Boolean} arrancaMv 
+ */
+function guardaDatosMV(pathMV, ram, cpu, arrancaMv){
+  const funcionAlmacenaDatos = (path)=>{
+    //Almaceno los datos de la MV
+    ipcRenderer.send('apply-mv-params', path, cpu, ram);
+
+    //Arranco la maquina virtual si me lo indican
+    if(arrancaMv){
+      ipcRenderer.on('complete-mv-params', (e, data) =>{
+        if(data !== null){
+          arrancaMv(path);
+        }else{
+          //Se ha producido un error almacenando los datos
+          muestraMensajeAlerta("Error Edicion MV", "Se ha producido un error al modificar la MV, parece que no existe ninguna MV almacenada", false, true);
+        }
+      });
+    }
+  };
+
+  if(pathMV === null){
+    //Si no tengo URL la obtengo primero;
+    ipcRenderer.send('get-mv-path');
+
+    ipcRenderer.on('return-mv-path', (e, data)=>{
+      if(data === null){
+        //No existe la ubicacion, regreso
+        muestraMensajeAlerta("Error Edicion MV", "Se ha producido un error al modificar la MV, parece que no existe ninguna MV almacenada", false, true);
+      }else{
+        //Existe la informacion del path, modifico en esa url
+
+      }
+    });
+  }else{
+    //Si la tengo pues almaceno en esa url
+  }
+}
+
+/**
+ * Funcion que arranca una maquina virtual en una MV especificada
+ */
+function arrancaMv(url){
+  //Copio el fichero shell del kubejoin
+
+  //TODO: Esto se tendria que hacer consultando a la API y viendo si ha cambiado
+
+  ipcRenderer.send('almacena-kubejoin', url);
+
+  ipcRenderer.on('kubejoin-almacenado', (e, data)=>{
+    if(data != null){
+
+    }
+  })
+}
 /***********************************
  *    Eventos
  ***********************************/
-//Accion del boton recargar
+
 boton_recargar.onclick = actualizaContenedores;
 boton_creacion.onclick = botonCrearPulsado;
 boton_eliminar_tarjeta.onclick = botonEliminarPulsado;
 boton_guardar_edicion.onclick = botonGuardarEdicionPulsado;
 boton_cerrar_sesion.onclick = botonCerrarSesionPulsado;
-
+//boton_compartir_pc.onclick = compartirPCPulsado();
+//Logica para cuando se cambia de modo de funcionamiento
+document.getElementById("switchModo").onclick = ()=>{
+  switchModoPulsado();
+};
 
 /***********************************
  *    Funcionamiento al principio

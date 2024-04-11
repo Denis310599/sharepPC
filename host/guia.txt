@@ -1,0 +1,11 @@
+Creamos una maquina virutal basada en bento/ubuntu_22.04
+
+Instalamos todo lo necesario con "sudo ./common.sh".
+
+Cambiamos las claves publicas del ssh en ~/.ssh/authorized_keys" por las del github.
+
+Comprimimos la maquina con "vagrant package --base sharepc"
+
+Subimos la box a vagrant cloud para poder descargarla normalmente.
+
+Añadimos el provission para que se una con el kubeadm.
