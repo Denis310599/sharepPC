@@ -101,16 +101,16 @@
     </div>    
 
     <!-- Contenedor de compartir pc-->
-    <div class="contenedor-share disabled" style="overflow-y: auto; height: calc(100vh - 72px);">
+    <div class="contenedor-share" style="overflow-y: auto; height: calc(100vh - 72px);">
       <div class="datos-contenedor">
         <div class="tipo-dato">Estado</div>
-        <div class="valor-dato">Encendido/Apagado</div>
+        <div class="valor-dato estado">Obteniendo estado...</div>
         <div class="tipo-dato">Ubicación</div>
-        <div class="valor-dato">C:/Users/Denis/ruta...</div>
+        <div class="valor-dato ruta">-</div>
         <div class="tipo-dato">CPUs</div>
-        <div class="valor-dato">4</div>
+        <div class="valor-dato cpus">-</div>
         <div class="tipo-dato">Memoria</div>
-        <div class="valor-dato">4096 Mb</div>
+        <div class="valor-dato ram">-</div>
       </div>
 
       <div style="position: absolute;  display: flex; justify-content: center; bottom: 0; right: 0; left: 0;">
@@ -330,7 +330,7 @@
     </div>
 
     <!-- Modal de ajustes compartir-->
-    <div id="modalAjustesCompartir" class="modal" style="display: none; ">
+    <div id="modalEditarMV" class="modal" style="display: none; ">
       <div class="modal-content">
         <div class="modal-header">
           <h2 class="modal-header titulo-modal">Ajustes Máquina Virtual</h2>
@@ -380,6 +380,11 @@
           <div class="tipo-dato-form">Eliminar máquina virtual</div>
           <button class="boton-eliminar">Eliminar MV</button> 
         </div>
+
+        <div class="error-container-modal">
+          <div class="error-message disabled">Error</div>
+        </div>
+
         <div style="display: flex; justify-content: center; margin: 10px; margin-top: 30px;">
           <button class="boton-cancelar" style="margin: 10px;">Cancelar</button>
           <button class="boton-aceptar" style="margin: 10px;">Guardar</button>

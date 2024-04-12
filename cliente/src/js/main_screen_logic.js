@@ -1,6 +1,7 @@
 //Definimos las dependencias
 const { ipcRenderer, ipcMain } = require('electron');
 const https = require('https');
+const { stdout } = require('process');
 
 
 //Definimos las referencias del DOM necesarias
@@ -9,6 +10,7 @@ const modal_edicion = document.getElementById("modalEdicionContenedor");
 const modal_alerta = document.getElementById("modalAlertaUsuario");
 const modal_cargando = document.getElementById("modalCargando");
 const modal_crear_mv = document.getElementById("modalCrearMV");
+const modal_editar_mv = document.getElementById("modalEditarMV");
 
 const boton_recargar = document.getElementById("botonRecargar");
 const boton_creacion = modal_creacion.querySelector(".boton-aceptar");
@@ -17,7 +19,7 @@ const boton_guardar_edicion = modal_edicion.querySelector(".boton-aceptar");
 
 const boton_ajustes = document.getElementById("botonSettings");
 const boton_cerrar_sesion = document.getElementById("modalAjustes").querySelector(".boton-eliminar");
-
+const boton_ajustes_mv = document.getElementById("botonSettingsCompartir");
 const boton_compartir_pc = document.getElementById("botonCompartirPC");
 
 //Definimos los objetos globales
@@ -792,18 +794,18 @@ function switchModoPulsado(){
  */
 function comenzarCompartirPC(){
   //Comprueba si existe una maquina virtual creada ya
-  ipcRenderer.send('get-mv-id');
+  ipcRenderer.send('get-mv-path');
 
-  ipcRenderer.on('return-mv-id', (e, datos)=>{
+  ipcRenderer.on('return-mv-path', (e, datos)=>{
     if(datos !== null){
       //Si existe el id, existe una maquina, y por tanto la arranco
+      arrancaMv();
     }else{
       //Si no existe ninguna maquina creada la creo de nuevo
       creaMvCompartir();
     }
   });
 
-  //Si no existe todavia ninguna maquina virtual...
 }
 
 /**
@@ -821,6 +823,57 @@ function creaMvCompartir(){
    
 }
 
+
+function muestraYConfiguraModalEdicionMV(){
+  //Mostramos el modal con todas las animaciones posibles
+  modal_editar_mv.style.display = "block";
+
+  modal_editar_mv.classList.add("in");
+  modal_editar_mv.querySelector('.modal-content').classList.add("in");
+     
+  modal_editar_mv.onanimationend = ()=>{
+    modal_editar_mv.classList.remove("in");
+    modal_editar_mv.querySelector('.modal-content').classList.remove("in");
+  }
+
+  //Obtencion de los datos
+  //URL
+  modal_editar_mv.querySelector(".input-dato.ruta-mv").onclick = ()=>{
+    ipcRenderer.send('ask-mv-path');
+
+    ipcRenderer.on('return-path', (e, path)=>{
+      pathMV = path;
+      modal_editar_mv.querySelector(".input-dato.ruta-mv").value = pathMV;
+    })
+  }
+ 
+   //CPU y RAM
+   const memSize = modal_editar_mv.querySelector(".input-mem-size");
+   const memType = modal_editar_mv.querySelector(".input-mem-type");
+   const cpus = modal_editar_mv.querySelector(".input-cpus");
+ 
+   const mensajeError = modal_editar_mv.querySelector(".error-message");
+ 
+   modal_editar_mv.querySelector(".boton-aceptar").onclick = ()=>{
+     if(pathMV != ""){
+       //Valido y obtengo los valores de los campos
+       if(!Number.isInteger(cpus.value) || !Number.isInteger(memType.value)){
+         //Error al procesar los datos
+         mensajeError.textContent = "Error, el numero de CPUs y la Memoria especificada deben ser numeros enteros positivos";
+         resetModal(modal_editar_mv, false, true, false);
+         return;
+       }
+       //Guarda la informacion de la MV y la arranca cuando este todo gucci
+       guardaDatosMV(pathMV, parseInt(memSize.value)*(memType.value == "Mi" ? 1: 1024), parseInt(cpus.value), true);
+     }else{
+       mensajeError.textContent = "Error: Debe espicifar una ruta para la MV.";
+       resetModal(modal_editar_mv, false, true, false);
+       return;
+     }
+   };
+ 
+   modal_editar_mv.querySelector(".boton-cancelar").onclick = ()=>{resetModal(modal_editar_mv, true, false, true)};
+}
 
 /**
  * Funcion que muestra y configura el modal de creacion de MV
@@ -867,7 +920,7 @@ function muestraYConfiguraModalCreacionMV(){
         return;
       }
       //Guarda la informacion de la MV y la arranca cuando este todo gucci
-      guardaDatosMV(pathMV, parseInt(memSize.value)*(memType.value == "Mi" ? 1: 1024), parseInt(cpus.value));
+      guardaDatosMV(pathMV, parseInt(memSize.value)*(memType.value == "Mi" ? 1: 1024), parseInt(cpus.value), true);
     }else{
       mensajeError.textContent = "Error: Debe espicifar una ruta para la MV.";
       resetModal(modal_crear_mv, false, true, false);
@@ -891,16 +944,20 @@ function guardaDatosMV(pathMV, ram, cpu, arrancaMv){
     ipcRenderer.send('apply-mv-params', path, cpu, ram);
 
     //Arranco la maquina virtual si me lo indican
-    if(arrancaMv){
-      ipcRenderer.on('complete-mv-params', (e, data) =>{
-        if(data !== null){
+    ipcRenderer.on('complete-mv-params', (e, data) =>{
+      if(data !== null){
+        if(arrancaMv){
           arrancaMv(path);
         }else{
-          //Se ha producido un error almacenando los datos
-          muestraMensajeAlerta("Error Edicion MV", "Se ha producido un error al modificar la MV, parece que no existe ninguna MV almacenada", false, true);
+          muestraMensajeAlerta("Edicion MV", "Los cambios se han aplicado satisfactoriamente.", false, true);
         }
-      });
-    }
+        
+      }else{
+        //Se ha producido un error almacenando los datos
+        muestraMensajeAlerta("Error Edicion MV", "Se ha producido un error al modificar la MV, parece que no existe ninguna MV almacenada", false, true);
+      }
+    });
+    
   };
 
   if(pathMV === null){
@@ -913,11 +970,12 @@ function guardaDatosMV(pathMV, ram, cpu, arrancaMv){
         muestraMensajeAlerta("Error Edicion MV", "Se ha producido un error al modificar la MV, parece que no existe ninguna MV almacenada", false, true);
       }else{
         //Existe la informacion del path, modifico en esa url
-
+        funcionAlmacenaDatos(data.get(mv_id));
       }
     });
   }else{
     //Si la tengo pues almaceno en esa url
+    funcionAlmacenaDatos(pathMV);
   }
 }
 
@@ -937,6 +995,92 @@ function arrancaMv(url){
     }
   })
 }
+
+/**
+ * Cambia la UI de compartir PC segun el estado
+ * @param {String} estado Pueden ser "on", "off", "cargando", "Inexistente"
+ */
+function actualizaUICompartirPC(estado, ruta=null, cpus=null, ram=null){
+  const txtEstado = contenedor.querySelector(".estado");
+  const rutaObj = contenedor.querySelector(".ruta");
+  const cpusObj = contenedor.querySelector(".cpus");
+  const ramObj = contenedor.querySelector(".ram");
+
+  switch(estado){
+    case "on":
+      txtEstado.textContent = "Compartiendo";
+      rutaObj.textContent = ruta;
+      cpusObj.textContent = cpus;
+      ramObj.textContent = ram + "Mb";
+      break;
+    case "off":
+      txtEstado.textContent = "No compartiendo";
+      rutaObj.textContent = ruta;
+      cpusObj.textContent = cpus;
+      ramObj.textContent = ram + "Mb";
+      break;
+    case "cargando":
+      txtEstado.textContent = "Cargando...";
+      rutaObj.textContent = ruta;
+      cpusObj.textContent = cpus;
+      ramObj.textContent = ram + "Mb";
+    case "inexistente":
+      txtEstado.textContent = "No compartiendo";
+      rutaObj.textContent = "-";
+      cpusObj.textContent = "-";
+      ramObj.textContent = "-";
+  }
+  
+}
+
+/**
+ * Funcionq ue comprueba el estado de la maquina virtual
+ */
+function compruebaEstadoMV(callback){
+  //Obtiene la URL
+  ipcRenderer.send('get-mv-path');
+  ipcRenderer.on('return-mv-path', (e, ruta)=>{
+    if(ruta === null){
+      //La maquina no existe
+      callback("inexistente");
+    }else{
+      //Ejecuto el comando en la URL
+      const url = ruta.get("mv_path");
+      exec("vagrant status", {'cwd':url}, (error, stdout, stderr)=>{
+        if(error){
+          console.log("Error en el comando vagrant");
+          return;
+        }
+
+        const lineas = stdout.split('\n');
+        let mvEncontrada = false;
+        for (let linea in lineas){
+          if(linea.includes('sharepc-test')){
+            mvEncontrada = true;
+            if(linea.includes('running')){
+              callback("on");
+            }else if(linea.includes('poweroff')){
+              callback("off");
+            }else{
+              callback("cargando");
+            }
+
+            console.log("Maquina encontrada");
+            break;
+            
+          }
+        }
+        if (!mvEncontrada){
+          console.log("Maquina no encontrada en el directorio almacenado");
+          callback("inexistente");
+        }
+
+
+      });
+    }
+  });
+  //Ejecuta el comando vagrant status en la ubicacion especificada
+}
 /***********************************
  *    Eventos
  ***********************************/
@@ -946,11 +1090,13 @@ boton_creacion.onclick = botonCrearPulsado;
 boton_eliminar_tarjeta.onclick = botonEliminarPulsado;
 boton_guardar_edicion.onclick = botonGuardarEdicionPulsado;
 boton_cerrar_sesion.onclick = botonCerrarSesionPulsado;
-//boton_compartir_pc.onclick = compartirPCPulsado();
+boton_compartir_pc.onclick = comenzarCompartirPC;
+boton_ajustes_mv.onclick = muestraYConfiguraModalEdicionMV;
 //Logica para cuando se cambia de modo de funcionamiento
 document.getElementById("switchModo").onclick = ()=>{
   switchModoPulsado();
 };
+
 
 /***********************************
  *    Funcionamiento al principio
@@ -970,6 +1116,20 @@ ipcRenderer.on('global-variables', (e, variables)=>{
   //Cuando he finalizado, comienzo automaticamente a buscar los contenedores
   //Cuando la ventana esta preparada se comienza a consultar la API
   actualizaContenedores();
+
+  ipcRenderer.send('get-mv-params');
+  ipcRenderer.on('return-mv-params', (e, data)=>{
+    const contenedor = document.querySelector(".contenedor-share");
+    if(data===null){
+      //Error al pillar los datos, parece que no hay ninguna maquina virtual
+      actualizaUICompartirPC("inexistente");
+    }else{
+      //Comprobar el estado de la maquina virtual
+      compruebaEstadoMV((estado)=>{
+        actualizaUICompartirPC(estado);
+      });
+    }
+  });
 });
 
 //Hacer que, periódicamente, se pulse el boton de recargar (15s)

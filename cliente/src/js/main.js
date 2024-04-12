@@ -53,9 +53,9 @@ app.on('window-all-closed', () => {
   }
 })
 
-/*****************************************
+/***********************************************************************
  *    Funciones del ipc_main
- * ***************************************
+ * *********************************************************************
  */
 //Handler de peticion de apertura de menu
 ipcMain.on('menu-video-source', (event) =>{
@@ -192,7 +192,7 @@ ipcMain.on('set-mv-id', (e, id) =>{
     if(id == ""){
       delete dataJSON.mv_id;
     }else{
-      dataJSON.mv_id = mv_id;
+      dataJSON.mv_id = id;
     }
     
     fs.writeFileSync(USER_DATA_PATH, JSON.stringify(dataJSON));
@@ -218,7 +218,7 @@ ipcMain.on('set-mv-path', (e, path) =>{
     if(path == ""){
       delete dataJSON.mv_path;
     }else{
-      dataJSON.mv_id = mv_path;
+      dataJSON.mv_path = path;
     }
     
     fs.writeFileSync(USER_DATA_PATH, JSON.stringify(dataJSON));
@@ -241,7 +241,7 @@ ipcMain.on('get-mv-path', (e) => {
     const dataJSON = JSON.parse(data);
     console.log(dataJSON)
     if(dataJSON.mv_path){
-      ret.set('mv_id', dataJSON.mv_path);
+      ret.set('mv_path', dataJSON.mv_path);
     }else{
       ret = null;
     }
@@ -282,19 +282,26 @@ ipcMain.on('apply-mv-params', async (e, url, cpus, memoria)=>{
     if(dataJSON.mv_id){
       id = dataJSON.mv_id;
     }else{
-      id = null;
+      //Actualizo el valor del id
+      id = session_id;
+      dataJSON.mv_id = id;
+      fs.writeFileSync(USER_DATA_PATH, JSON.stringify(dataJSON))
     }
     
   } catch(error) {
     console.log('Error, no hay ningun id almacenado', error);  
     // you may want to propagate the error, up to you
-    id = null;
+    id=session_id;
+    fs.writeFileSync(USER_DATA_PATH, JSON.stringify({'mv_id': id}))
+    
   }
 
   if(id === null){
+    console.error("Error al obtener el ID");
     e.sender.send('complete-mv-params', null)
     return;
   }
+
   //Muevo el VagrantFile hasta la URL
   const pathVagrantFile = path.join(__dirname,'../assets/Vagrantfile');
   try{
@@ -343,6 +350,65 @@ ipcMain.on('apply-mv-params', async (e, url, cpus, memoria)=>{
   });  
 });
 
+//Obtiene la informacion de una MV
+ipcMain.on('get-mv-params', async (e)=>{
+  console.log("Obteniendo los parámetros de la MV")
+  //Compruebo si tengo URL
+  let ret = new Map();
+  try {
+    const data = fs.readFileSync(USER_DATA_PATH, 'utf-8');
+    const dataJSON = JSON.parse(data);
+    console.log(dataJSON)
+    if(dataJSON.mv_path){
+      ret.set('mv_path', dataJSON.mv_path);
+    }else{
+      ret = null;
+    }
+    
+  } catch(error) {
+    console.log('Error retrieving user data', error);  
+    // you may want to propagate the error, up to you
+    ret = null;
+  }
+
+  if(ret === null){
+    //Devuelvo que se ha produciddo un error
+    e.sender.send('return-mv-params', null);
+    return;
+  }
+
+  //Compruebo si tengo el resto de datos
+  fs.readFile(url + "/Vagrantfile", 'utf8', (err, vagrantFile)=>{
+    if(err){
+      console.log("Error abriendo el vagrantfile");
+      e.sender.send('return-mv-params', null);
+      return;
+    }
+
+   //RAM
+   let regex = new RegExp(`vb.memory\s*=\s*['"]([^'"]+)['"]`);
+   let match = regex.exec(vagrantFIle);
+   if(match){
+    ret.set('ram', parseInt(match[1]));
+   }else{
+      e.sender.send('return-mv-params', null);
+      return;
+   }
+
+   //CPUs
+   regex = new RegExp(`vb.cpus\s*=\s*['"]([^'"]+)['"]`);
+   match = regex.exec(vagrantFIle);
+   if(match){
+    ret.set('cpus', parseInt(match[1]));
+   }else{
+      e.sender.send('return-mv-params', null);
+      return;
+   }
+  });  
+
+  //Devuelvo los datos obtenidos
+  e.sender.send('return-mv-params', ret);
+});
 
 //Funcion que abre un menu
 async function createSourceVideoSelector(event){
