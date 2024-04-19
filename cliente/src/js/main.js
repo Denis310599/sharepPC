@@ -192,7 +192,9 @@ ipcMain.on('set-mv-id', (e, id) =>{
     if(id == ""){
       delete dataJSON.mv_id;
     }else{
-      dataJSON.mv_id = id;
+      const idAlmacenado = id.split("#");
+      dataJSON.mv_id = idAlmacenado[0]+idAlmacenado[1];
+      
     }
     
     fs.writeFileSync(USER_DATA_PATH, JSON.stringify(dataJSON));
@@ -200,7 +202,8 @@ ipcMain.on('set-mv-id', (e, id) =>{
     console.log('Error retrieving user data', error);  
     // No hay datos, por lo que tengo que escribirlos
     if(id != ""){
-      const datosEscribir = {'mv_id': id};
+      const idAlmacenado = id.split("#");
+      const datosEscribir = {'mv_id': idAlmacenado[0]+idAlmacenado[1]};
       fs.writeFileSync(USER_DATA_PATH, JSON.stringify(datosEscribir));
     }
   }
@@ -234,7 +237,7 @@ ipcMain.on('set-mv-path', (e, path) =>{
 
 //Obtencion del path de la maquina virtual
 ipcMain.on('get-mv-path', (e) => {
-  console.log("Obteniendo datos de mquina virtual");
+  console.log("Obteniendo path de mauina virtual");
   let ret = new Map();
   try {
     const data = fs.readFileSync(USER_DATA_PATH, 'utf-8');
@@ -265,9 +268,10 @@ ipcMain.on('ask-mv-path', async (e)=>{
       if(!result.canceled){
         res = result.filePaths[0];
       }
+      console.log("Path seleccionado: " + res);
 
-      //Envio de vuelta el pach
-      e.sender.send('return-mv-path', ret);
+      //Envio de vuelta el path
+      e.sender.send('return-mv-path', res);
     });
 });
 
@@ -283,16 +287,20 @@ ipcMain.on('apply-mv-params', async (e, url, cpus, memoria)=>{
       id = dataJSON.mv_id;
     }else{
       //Actualizo el valor del id
-      id = session_id;
-      dataJSON.mv_id = id;
-      fs.writeFileSync(USER_DATA_PATH, JSON.stringify(dataJSON))
+      const idAlmacenado = session_id.split("#")
+      id = idAlmacenado[0]+idAlmacenado[1];
     }
+
+    dataJSON.mv_id = id;
+    dataJSON.mv_path = url;
+    fs.writeFileSync(USER_DATA_PATH, JSON.stringify(dataJSON));
     
   } catch(error) {
     console.log('Error, no hay ningun id almacenado', error);  
     // you may want to propagate the error, up to you
-    id=session_id;
-    fs.writeFileSync(USER_DATA_PATH, JSON.stringify({'mv_id': id}))
+    const idAlmacenado = session_id.split("#")
+    id = idAlmacenado[0]+idAlmacenado[1];
+    fs.writeFileSync(USER_DATA_PATH, JSON.stringify({'mv_id': id, 'mv_path': url}))
     
   }
 
@@ -306,9 +314,9 @@ ipcMain.on('apply-mv-params', async (e, url, cpus, memoria)=>{
   const pathVagrantFile = path.join(__dirname,'../assets/Vagrantfile');
   try{
     const contenidoVagrantfile = fs.readFileSync(pathVagrantFile, 'utf-8');
-    fs.writeSync(url+"/Vagrantfile", contenidoVagrantfile);
-  }catch(e){
-    console.log("Error al copiar el vagrantfile");
+    fs.writeFileSync(url+"/Vagrantfile", contenidoVagrantfile);
+  }catch(err){
+    console.log("Error al copiar el vagrantfile" + err);
     e.sender.send('complete-mv-params', null)
     return;
   }
@@ -335,7 +343,7 @@ ipcMain.on('apply-mv-params', async (e, url, cpus, memoria)=>{
 
     datosModificados = datosModificados.replace(
       /vb.cpus = ".+"/,
-      'vb.memory = "' + cpus + '"'
+      'vb.cpus = "' + cpus + '"'
     );
 
     fs.writeFile(url + "/Vagrantfile", datosModificados, 'utf8', (error) =>{
@@ -352,7 +360,7 @@ ipcMain.on('apply-mv-params', async (e, url, cpus, memoria)=>{
 
 //Obtiene la informacion de una MV
 ipcMain.on('get-mv-params', async (e)=>{
-  console.log("Obteniendo los parámetros de la MV")
+  console.log("Obteniendo los parametros de la MV")
   //Compruebo si tengo URL
   let ret = new Map();
   try {
@@ -373,41 +381,70 @@ ipcMain.on('get-mv-params', async (e)=>{
 
   if(ret === null){
     //Devuelvo que se ha produciddo un error
+    console.log("Error al pillar los datos de la Maquina, no parece q se haya creado ninguna.");
     e.sender.send('return-mv-params', null);
     return;
   }
-
+  let url = ret.get("mv_path");
   //Compruebo si tengo el resto de datos
   fs.readFile(url + "/Vagrantfile", 'utf8', (err, vagrantFile)=>{
-    if(err){
-      console.log("Error abriendo el vagrantfile");
+    try{
+      if(err){
+        throw("Error anbriendo el Vagrantfile");
+      }
+
+      //RAM
+      let regex = /\s*vb.memory\s*=\s*['"]([^'"]+)['"]/;
+      let match = regex.exec(vagrantFile);
+      if(match){
+        ret.set('ram', parseInt(match[1]));
+      }else{
+        throw("Error pillando la ram");
+      }
+
+      //CPUs
+      regex = /\s*vb.cpus\s*=\s*['"]([^'"]+)['"]/;
+      match = regex.exec(vagrantFile);
+      if(match){
+        ret.set('cpus', parseInt(match[1]));
+      }else{
+        throw("Error pillando los cpus");
+      }
+
+      //Devuelvo los datos obtenidos
+      console.log(ret);
+      e.sender.send('return-mv-params', ret);
+    }catch (error){
+      console.error("Error al obtener los datos del vagrantfile. " + error);
+      console.log(ret);
+
       e.sender.send('return-mv-params', null);
       return;
     }
-
-   //RAM
-   let regex = new RegExp(`vb.memory\s*=\s*['"]([^'"]+)['"]`);
-   let match = regex.exec(vagrantFIle);
-   if(match){
-    ret.set('ram', parseInt(match[1]));
-   }else{
-      e.sender.send('return-mv-params', null);
-      return;
-   }
-
-   //CPUs
-   regex = new RegExp(`vb.cpus\s*=\s*['"]([^'"]+)['"]`);
-   match = regex.exec(vagrantFIle);
-   if(match){
-    ret.set('cpus', parseInt(match[1]));
-   }else{
-      e.sender.send('return-mv-params', null);
-      return;
-   }
   });  
+});
 
-  //Devuelvo los datos obtenidos
-  e.sender.send('return-mv-params', ret);
+//Almacena el nuevo comando kubeadm join en el sh de la ubicacion especificada
+ipcMain.on('almacena-kubejoin', (e, url, comando)=>{
+  //Copio el fichero a la URL
+  
+  const pathSh = path.join(__dirname,'../assets/kubejoin.sh');
+  try{
+    const contenidoScript = fs.readFileSync(pathSh, 'utf-8');
+    fs.writeFileSync(url+"/kubejoin.sh", contenidoScript);
+
+    fs.appendFileSync(url+"/kubejoin.sh",
+          "\nsudo kubeadm join gusydenis.duckdns.org:6443 --token n6tn0u.on2l4emc5qi2ibve --discovery-token-ca-cert-hash sha256:9ba5bf25141f9dcb4ca5905c66c836eee188405e100f31cf69c7f122bc4f9044",
+          'utf8');
+    
+    e.sender.send('kubejoin-almacenado', 0);
+
+  }catch(err){
+    console.log("Error al copiar el kubejoin");
+    e.sender.send('kubejoin-almacenado', null);
+    return;
+  }
+
 });
 
 //Funcion que abre un menu

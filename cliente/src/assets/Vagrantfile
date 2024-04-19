@@ -1,0 +1,17 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "denis31599/sharepc"
+  
+  config.vm.hostname = "test-worker"
+  
+  config.vm.provision :shell, :path => "kubejoin.sh"
+
+  
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "8192"
+    vb.cpus = "6"
+    vb.name = "sharepc-test3"
+    end
+end
