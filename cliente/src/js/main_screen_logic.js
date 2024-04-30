@@ -1,5 +1,5 @@
 //Definimos las dependencias
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 const { ipcRenderer, ipcMain } = require('electron');
 const https = require('https');
 const { stdout, stdin } = require('process');
@@ -46,6 +46,12 @@ let session_id;
 
 let host_API;
 
+/**
+ * Datos de la maquina virtual
+ */
+let url_mv;
+let cpus_mv;
+let memoria_mv;
 
 
 
@@ -67,7 +73,8 @@ function enviaPeticionAPI(peticion, tk, args, callback){
     port: 443,
     method: peticion
   }
-  
+  console.log("Enviando peticion API: \n\t");
+  console.log(args);
   let data; //Contendra, en caso de ser necesario, el body
 
   //Relleno los httpOptions segun el metodo usado
@@ -574,6 +581,7 @@ function resetModal(modal, salir, muestraError=false, resetDatos=true){
   const botonGuardar = modal.querySelector(".boton-aceptar");
   const botonSalir = modal.querySelector(".boton-cancelar");
 
+
   if(modal == modal_crear_mv || modal == modal_editar_mv){
     //Congig especifica del de creacion de mv
     const mem_s = modal.querySelector(".input-mem-size");
@@ -726,25 +734,33 @@ function botonCerrarSesionPulsado(){
  * Muestra el dialog de cargando
  * @param {String} titulo 
  */
-function muestraDialogCargando(titulo){
+function muestraDialogCargando(titulo, contenido = null){
   const tituloObj = modal_cargando.querySelector(".titulo-modal");
 
   //Ajusto el titulo
   tituloObj.textContent = titulo;
 
-  //Muestro el modal
-  modal_cargando.style.display = "block";
-  
-  if(modal_cargando.classList.contains("in")){
-    modal_cargando.classList.remove("in");
+  if(contenido !== null){
+    document.getElementById("contenidoModalCargando").textContent = contenido;
+  }else{
+    document.getElementById("contenidoModalCargando").textContent = "";
   }
 
-  modal_cargando.classList.add("in");
-  modal_cargando.querySelector('.modal-content').classList.add("in");
+  //Muestro el modal
+  if( modal_cargando.style.display != 'block'){
+    modal_cargando.style.display = "block";
     
-  modal_cargando.onanimationend = ()=>{
-    modal_cargando.classList.remove("in");
-    modal_cargando.querySelector('.modal-content').classList.remove("in");
+    if(modal_cargando.classList.contains("in")){
+      modal_cargando.classList.remove("in");
+    }
+
+    modal_cargando.classList.add("in");
+    modal_cargando.querySelector('.modal-content').classList.add("in");
+      
+    modal_cargando.onanimationend = ()=>{
+      modal_cargando.classList.remove("in");
+      modal_cargando.querySelector('.modal-content').classList.remove("in");
+    }
   }
 
 }
@@ -792,6 +808,8 @@ function switchModoPulsado(){
     txtHost.classList.remove("disabled");
     panelConexiones.classList.add("disabled");
     panelShare.classList.remove("disabled");
+
+    clearInterval(recargaPeriodica);
   }else{
     //Se puede cambiar de modo si la MV no está en funcionamiento
 
@@ -800,6 +818,7 @@ function switchModoPulsado(){
     panelConexiones.classList.remove("disabled");
     panelShare.classList.add("disabled");
 
+    recargaPeriodica = setInterval(()=>{boton_recargar.click()}, 15000);
   }
 }
 
@@ -814,6 +833,7 @@ function comenzarCompartirPC(){
     ipcRenderer.removeAllListeners('return-mv-path');
     if(datos !== null){
       //Si existe el path, existe una maquina, y por tanto la arranco
+      console.log("Arrancando en url "+ datos.get('mv_path'));
       arrancaMv(datos.get('mv_path'));
     }else{
       //Si no existe ninguna maquina creada la creo de nuevo
@@ -826,16 +846,79 @@ function comenzarCompartirPC(){
 /**
  * Función que crea una nueva máquina virtual para compartir el pc
  */
-function creaMvCompartir(){
+async function creaMvCompartir(){
+  //Indica al usuario que esta cargando
+  muestraDialogCargando("Comprobando que el software necesario se encuentre instalado");
+
   //Comprueba si vagrant está instalado
+  const vagrantInstalado = await checkVagrantInstalado();
+  hideDialogCargando();
 
-  //Comprueba si VBox está instalado
-
-  //Muestra el panel de configuracion de la maquina virtual
-  muestraYConfiguraModalCreacionMV();
-   
+  if(vagrantInstalado){
+    //Muestra el panel de configuracion de la maquina virtual
+    muestraYConfiguraModalCreacionMV();
+  }else{
+    //Procede a instalar vagrant
+    muestraMensajeAlerta("Vagrant No Instalado", "Vagrant no se encuentra instalado en su equipo y es necesario para poder compartir su ordenador ¿Desea instalarlo ahora mismo?", true, true, ()=>{instalarVagrant()});
+    
+  }
+  //Comprueba si VBox está instalado ( lo hace automaticamente Vagrant)
 }
 
+/**
+ * Funcion que instala vagrant en su equipo
+ * 
+ * Por ahora unicamente instala la version de x86-64. Para cualquier otra version es necesario instalarlo manualmente
+ */
+function instalarVagrant(){
+  // URL del instalador de Vagrant
+  const urlInstalador = 'https://releases.hashicorp.com/vagrant/2.4.1/vagrant_2.4.1_windows_amd64.msi'; // Cambia la URL según la versión y el sistema operativo
+
+  ipcRenderer.send('instala-vagrant');
+
+  ipcRenderer.on('return-instala-vagrant', (e, exito)=>{
+    ipcRenderer.removeAllListeners('return-instala-vagrant');
+    
+    //Si se ha instalado correctamente continuo
+    if(exito){
+      //Continuamos con la ejecucion de todo
+      creaMvCompartir();
+    }else{
+      //Si no se ha instalado correctamente lo indico
+      muestraMensajeAlerta("Vagrant No Instalado", "Se ha producido un error instalando vagrant. La instalación no se ha completado con éxito.", false, true);
+    }
+  });
+  
+}
+
+/**
+ * Función que comprueba si vagrant se encuentra instalado en el equipo o no.
+ * 
+ * @returns True si se encuentra instalado, False si no.
+ */
+function checkVagrantInstalado(){
+
+  return new Promise((resolveFunc)=>{
+    // Comando para comprobar si Vagrant está instalado
+    const comando = 'vagrant --version';
+
+    // Ejecutar el comando para obtener la versión de Vagrant
+    exec(comando, (error, stdout, stderr) => {
+        if (error) {
+            console.error('Vagrant no está instalado en el equipo.');
+            resolveFunc(false);
+            // Aquí puedes llamar a una función para instalar Vagrant si lo deseas
+        } else {
+            console.log('Vagrant está instalado en el equipo.');
+            console.log('Versión de Vagrant:', stdout.trim());
+            resolveFunc(true);
+        }
+    });
+  });
+
+
+ 
+}
 
 function muestraYConfiguraModalEdicionMV(){
   //Mostramos el modal con todas las animaciones posibles
@@ -855,25 +938,29 @@ function muestraYConfiguraModalEdicionMV(){
   const memSize = modal_editar_mv.querySelector(".input-mem-size");
   const memType = modal_editar_mv.querySelector(".input-mem-type");
   const cpus = modal_editar_mv.querySelector(".input-cpus");
-  const ruta = modal_crear_mv.querySelector(".input-dato.ruta-mv");
+  const ruta = modal_editar_mv.querySelector(".input-dato.ruta-mv");
 
-  memSize.value = contenedor.querySelector(".ram");
-  cpus.value = contenedor.querySelector(".cpus");
-  ruta.textContent = contenedor.querySelector(".ruta");
+
+  console.log("Rellenando datos modal edicion MV");
+  memSize.value = memoria_mv;
+  cpus.value = cpus_mv;
+  memType.value = "Mi";
+  ruta.value = url_mv;
 
   const mensajeError = modal_editar_mv.querySelector(".error-message");
 
   modal_editar_mv.querySelector(".boton-aceptar").onclick = ()=>{
-    if(pathMV != ""){
+    if(url_mv != ""){
       //Valido y obtengo los valores de los campos
-      if(!Number.isInteger(cpus.value) || !Number.isInteger(memType.value)){
+      if(!Number.isInteger(parseInt(cpus.value)) || !Number.isInteger(parseInt(memSize.value))){
         //Error al procesar los datos
-        mensajeError.textContent = "Error, el numero de CPUs y la Memoria especificada deben ser numeros enteros positivos";
+        mensajeError.textContent = "Error: El numero de CPUs y la Memoria especificada deben ser numeros enteros positivos";
         resetModal(modal_editar_mv, false, true, false);
         return;
       }
       //Guarda la informacion de la MV y la arranca cuando este todo gucci
-      guardaDatosMV(pathMV, parseInt(memSize.value)*(memType.value == "Mi" ? 1: 1024), parseInt(cpus.value), false);
+      resetModal(modal_editar_mv, true, true, false);
+      guardaDatosMV(null, parseInt(memSize.value)*(memType.value == "Mi" ? 1: 1024), parseInt(cpus.value), false);
     }else{
       mensajeError.textContent = "Error: Debe espicifar una ruta para la MV.";
       resetModal(modal_editar_mv, false, true, false);
@@ -882,7 +969,7 @@ function muestraYConfiguraModalEdicionMV(){
   };
  
   //modal_editar_mv.querySelector(".boton-cancelar").onclick = ()=>{resetModal(modal_editar_mv, true, false, true)};
-  modal_editar_mv.querySelector(".boton-eliminar").onclick = eliminarMV;
+  modal_editar_mv.querySelector(".boton-eliminar").onclick = ()=>{eliminarMV(url_mv)};
 }
 
 /**
@@ -924,7 +1011,7 @@ function muestraYConfiguraModalCreacionMV(){
 
   const mensajeError = modal_crear_mv.querySelector(".error-message");
 
-  modal_crear_mv.querySelector(".boton-aceptar").onclick = ()=>{
+  modal_crear_mv.querySelector(".boton-aceptar").onclick = async()=>{
     if(pathMV != ""){
       //Valido y obtengo los valores de los campos
       if(!Number.isInteger(parseInt(cpus.value)) || !Number.isInteger(parseInt(memSize.value))){
@@ -933,11 +1020,35 @@ function muestraYConfiguraModalCreacionMV(){
         resetModal(modal_crear_mv, false, true, false);
         return;
       }
+
+      muestraDialogCargando("Validando creación de MV");
+      //TODO: Compruebo si existe alguna maquina virtual en la ubicacion
+      const directorioVacio = await compruebaDirectorioVacio(pathMV);
+      
+      if(directorioVacio === null){
+        //Indicar el error al usuario
+        mensajeError.textContent = "Error: Se ha producido un error al acceder al directorio. Por favor, asegúrese de que el directorio exista.";
+        resetModal(modal_crear_mv, false, true, false);
+        hideDialogCargando();
+        return;
+      }else{
+        if(directorioVacio){
+          //Guarda la MV y la crea sin confirmacion
+          resetModal(modal_crear_mv, true, false, false);
+          guardaDatosMV(pathMV, parseInt(memSize.value)*(memType.value == "Mi" ? 1: 1024), parseInt(cpus.value), true);
+        }else{
+          //Indica que el directorio debe estar vacio
+          mensajeError.textContent = "Error: el directorio seleccionado debe estar vacio. Por favor seleccione un directorio completamente vacío";
+          resetModal(modal_crear_mv, false, true, false);
+          hideDialogCargando();
+          return;
+        }
+      }
       //Guarda la informacion de la MV y la arranca cuando este todo gucci
-      guardaDatosMV(pathMV, parseInt(memSize.value)*(memType.value == "Mi" ? 1: 1024), parseInt(cpus.value), true);
     }else{
       mensajeError.textContent = "Error: Debe espicifar una ruta para la MV.";
       resetModal(modal_crear_mv, false, true, false);
+      hideDialogCargando();
       return;
     }
   };
@@ -946,40 +1057,76 @@ function muestraYConfiguraModalCreacionMV(){
 }
 
 /**
+ * Comprueba is un directorio está vacio o no
+ * @param {String} url 
+ */
+function compruebaDirectorioVacio(url){
+
+  return new Promise((resolveFunc)=>{
+    //Compruebo que el directorio este vacio
+    console.log("Comprobando si el directorio esta vacio");
+    ipcRenderer.send('check-empty-dir', url);
+    ipcRenderer.on('return-empty-dir', (e, vacio)=>{
+      ipcRenderer.removeAllListeners('return-empty-dir');
+      console.log("Directorio vacio: " + vacio);
+      resolveFunc(vacio);
+    });
+  });
+  
+}
+
+/**
  * Funcion que actualiza la informacion almacenada sobre una maquina virtual.
- * Si la url existe, se sobreescribe con la nueva y se edita ahi  * @param {string} pathMV 
+ * Si la url existe, se sobreescribe con la nueva y se edita ahi 
+ * @param {string} pathMV La URL donde se encuentra ma mv (Si es null significa que se actualiza la mv)
  * @param {Int} ram 
  * @param {Int} cpu 
  * @param {Boolean} enciendeMV 
  */
 function guardaDatosMV(pathMV, ram, cpu, enciendeMV){
   muestraDialogCargando("Aplicando cambios...")
+  
+
+  //Funcion que almacena los datos de la MV
   const funcionAlmacenaDatos = (path)=>{
     //Almaceno los datos de la MV
-    ipcRenderer.send('apply-mv-params', path, cpu, ram);
-
+    if(pathMV === null){
+      //La MV ya esta creada
+      ipcRenderer.send('apply-mv-params', path, cpu, ram, false);
+    }else{
+      //La MV tiene que crearse
+      ipcRenderer.send('apply-mv-params', path, cpu, ram, true);
+    }
+    
     //Arranco la maquina virtual si me lo indican
     ipcRenderer.on('complete-mv-params', (e, data) =>{
       ipcRenderer.removeAllListeners('complete-mv-params');
-      hideDialogCargando();
+      //Actualizo datos sobre la mv
+      cpus_mv = parseInt(cpu);
+      memoria_mv = parseInt(ram);
+      
       if(data !== null){
-        actualizaUICompartirPC(null, pathMV, cpu, ram);
+        actualizaUICompartirPC(null, path, cpu, ram);
         if(enciendeMV){
           arrancaMv(path);
         }else{
-          muestraMensajeAlerta("Edicion MV", "Los cambios se han aplicado satisfactoriamente.", false, true);
+          muestraMensajeAlerta("Edicion MV", "La configuracion se ha aplicado correctamente. Para aplicar los cambios es necesario dejar de compartir.", false, true);
+          hideDialogCargando();
         }
         
       }else{
         //Se ha producido un error almacenando los datos
-        muestraMensajeAlerta("Error Edicion MV", "Se ha producido un error al modificar la MV, parece que no existe ninguna MV almacenada", false, true);
+        muestraMensajeAlerta("Error Edicion MV", "Se ha producido un error al modificar la máquina virtual, no parece encontrarse ninguna informacion.", false, true);
+        hideDialogCargando();
       }
     });
     
   };
 
+
   if(pathMV === null){
-    //Si no tengo URL la obtengo primero;
+    console.log("Guardando cambios de la Maquina Virtual");
+    //Si no tengo URL la obtengo primero puesto que voy a actualizar la mv;
     ipcRenderer.send('get-mv-path');
 
     ipcRenderer.on('return-mv-path', (e, data)=>{
@@ -990,54 +1137,146 @@ function guardaDatosMV(pathMV, ram, cpu, enciendeMV){
         muestraMensajeAlerta("Error Edicion MV", "Se ha producido un error al modificar la MV, parece que no existe ninguna MV almacenada", false, true);
       }else{
         //Existe la informacion del path, modifico en esa url
-        funcionAlmacenaDatos(data.get(mv_id));
+        funcionAlmacenaDatos(data.get('mv_path'));
       }
     });
   }else{
-    //Si la tengo pues almaceno en esa url
-    funcionAlmacenaDatos(pathMV);
+    console.log("Aplicando cambios de la Maquina Virtual");
+    //Si la tengo pues almaceno en esa url y creo la MV
+    ipcRenderer.send('set-mv-path', pathMV);
+    ipcRenderer.on('return-mv-path', (pathEscrita)=>{
+      url_mv = pathMV;
+      ipcRenderer.removeAllListeners('return-mv-path');
+      if(pathEscrita === null){
+        //Se ha producido un error escribiendo el path
+        console.error("Path No almacenado");
+        hideDialogCargando();
+        muestraMensajeAlerta("Creacion MV", "Se ha producido un error creando los datos de la MV. Por favor intentelo de nuevo mas adelante.", false, true);
+      }else{
+        console.log("Path almacenado satisfactoriamente");
+        funcionAlmacenaDatos(pathMV);
+      }
+    });
   }
 }
 
 /**
- * Funcion que arranca una maquina virtual en una MV especificada
+ * Funcion que arranca una maquina virtual en una MV especificada y le pasa los parametros necesarios
  */
 function arrancaMv(url){
-  muestraDialogCargando("Comenzando a compartir PC...");
-  //Copio el fichero shell del kubejoin
+  muestraDialogCargando("Configurando PC compartido");
+  console.log("Obteniendo datos de inicio de MV...");
 
-  //TODO: Esto se tendria que hacer consultando a la API y viendo si ha cambiado
-  const comando = "";
-  ipcRenderer.send('almacena-kubejoin', url, comando);
+  //Compruebo si tengo el kubejoin por algun lado junto con el ts (en la url)
+  ipcRenderer.send('get-kubejoin-ts', url);
 
-  ipcRenderer.on('kubejoin-almacenado', (e, data)=>{
-    ipcRenderer.removeAllListeners('kubejoin-almacenado');
-    if(data === null){
-      hideDialogCargando();
-      muestraMensajeAlerta("Error Creacion MV", "Se ha producido un error al crear la maquina virtual");
-      console.log("Error al escribir el kubejoin");
-    }else{
-      //Abro la maquina virtual
-      actualizaUICompartirPC("cargando");
-      exec('vagrant up', {'cwd': url}, (error, stdout, stderr)=>{
-        console.log("stdout: " + stdout );
-        console.log("stderr: " + stderr );
-        hideDialogCargando();
-        if(error){
-          //Error al arrancar la maquina virtual
-          actualizaUICompartirPC("off");
+  ipcRenderer.on('return-kubejoin-ts', (e, ts_almacenada)=>{
+    ipcRenderer.removeAllListeners('return-kubejoin-ts');
+    //Consulto la API por si ha cambiado
+    enviaPeticionAPI("POST", session_token, {'action': "getKubejoin" , 'ts': ts_almacenada}, 
+    (dataAPI, errorAPI)=>{
+      try{
+        if(errorAPI){
+          //Se ha producido un error en la API, no se puede arrancar
+          throw("Error en la API (Internal Server Error)");
         }else{
-          //Comprobamos si la maquina ha arrancado correctamente
-          if(stdout.includes("Machine booted and ready")){
-            actualizaUICompartirPC("on");
+          //He obtenido respuesta, veo si tengo que actualizar o no la ejecucion
+          const jsonRecibido = JSON.parse(dataAPI);
+          console.log(jsonRecibido);
+          if('code' in jsonRecibido){
+            if(jsonRecibido.code == 0){
+              console.log("No hace falta actualizar kubejoin");
+              //Comando actualizado, no hay que hacer nada
+              ejecutaVagrantUp(url, null);
+            }else if(jsonRecibido.code == 1){
+              //Comando necesita actualizarse, se necesita reprovisionar la MV
+              console.log("Es necesario actualizar el kubejoin");
+              ejecutaVagrantUp(url, jsonRecibido.args.comando);
+            }
           }else{
-            actualizaUICompartirPC("off");
+            throw("Error en la respuesta del servidor, no reconocida.");
           }
         }
-      });
-      
+      }catch(err){
+        console.error("Se ha producido un error consultando a la API. "+ err);
+        hideDialogCargando();
+        muestraMensajeAlerta("Error al arrancar MV", "Se ha producido un error al comunicarse con el servidor, por favor intentelo de nuevo más adelante.", false, true);
+      }
+    });
+
+  });
+  
+}
+
+/**
+ * Funcion que ejecuta el comando de arranque desde vagrant
+ * @param {String} url Ubicacion de la maquina virtual
+ * @param {String} comando El comando de kubejoin en caso de ser necesario
+ */
+function ejecutaVagrantUp(url, comando){
+  muestraDialogCargando("Arrancando PC compartido");
+  console.log("Ejecutando vagrant up...");
+  const funcionVagrantUp = ()=>{
+    //Segun si tengo comando, obligo a ejecutar el script de provision o no
+    let vagrantCommand = 'vagrant';
+    let args = ['up'];
+    if(comando !== null){
+      args = ['up', '--provision'];
     }
-  })
+
+    //Abro la maquina virtual
+    actualizaUICompartirPC("cargando");
+    const proceso = spawn(vagrantCommand, args, {'cwd': url});
+
+    proceso.stdout.on('data', (data)=>{
+      console.log("stdout: " + data );
+      muestraDialogCargando("Arrancando PC compartido", data);
+    });
+
+    proceso.stderr.on('data', (data)=>{
+      console.log("stderr: " + data );
+    });
+
+    proceso.on('close', (code)=>{
+      console.log("Comando vagrant up ejecutado");
+      hideDialogCargando();
+      if(code == 0){
+        //Maquina arrancada satisfactoriamente
+        muestraMensajeAlerta("Compartir PC", "La máquina virtual se ha arrancando correctamente", false, true);
+        resetModal(modal_crear_mv, true, false, true);
+        actualizaUICompartirPC("on");
+      }else{
+        //Error al arrancar la maquina
+        actualizaUICompartirPC("off");
+      }
+
+      compruebaEstadoMV((estado)=>{
+        actualizaUICompartirPC(estado);
+      });
+    });
+  };
+
+  if(comando !== null){
+    console.log("Almacenando comando kubejoin...")
+    ipcRenderer.send('almacena-kubejoin', url, comando);
+
+    ipcRenderer.on('kubejoin-almacenado', (e, data)=>{
+      ipcRenderer.removeAllListeners('kubejoin-almacenado');
+      if(data === null){
+        hideDialogCargando();
+        muestraMensajeAlerta("Error Creacion MV", "Se ha producido un error al crear la maquina virtual");
+        console.log("Error al escribir el kubejoin");
+      }else{
+        //Si el comando se almacena correctametne puedo ejecutar arranque
+        console.log("Kubejoin almacenado correctamente");
+        funcionVagrantUp();
+      }
+    });
+  }else{
+    //Ejecuto el arranque normal
+    funcionVagrantUp();
+  }
+
 }
 
 /**
@@ -1045,17 +1284,42 @@ function arrancaMv(url){
  * @param {String} url 
  */
 function detenerMV(url){
-  muestraDialogCargando("Dejando de compartir el PC...");
-  exec('vagrant halt', {'cwd': url}, (error, stdout, stderr)=>{
+  console.log("Deteniendo VM");
+  muestraDialogCargando("Deteniendo MV");
+  try{
+    const proceso = spawn('vagrant', ['halt'], {'cwd': url});
+    proceso.stdout.on('data', (data)=>{
+      console.log("stdout: " + data );
+      muestraDialogCargando("Deteniendo MV", data);
+    });
+
+    proceso.stderr.on('data', (data)=>{
+      console.log("stderr: " + data );
+    });
+
+    proceso.on('close', (code)=>{
+      hideDialogCargando();
+      if(code == 0){
+        console.log("MV cerrada correctamente");
+        muestraMensajeAlerta("Detener MV", "La máquina virtual se ha detenido correctamente.", false, true);
+        //Maquina arrancada satisfactoriamente
+        actualizaUICompartirPC("off");
+      }else{
+        //Error al arrancar la maquina
+        console.error("Error al detener la MV.");
+        muestraMensajeAlerta("Error al detener MV", "Se ha producido un error al detener la máquina virtual. Puede que siga abierta en segundo plano.", false, true);
+        actualizaUICompartirPC("off");
+      }
+
+      compruebaEstadoMV((estado)=>{
+        actualizaUICompartirPC(estado);
+      });
+    });
+  }catch(e){
+    console.log("Error al cerrar la MV");
     hideDialogCargando();
-    if(error){
-      //Error al arrancar la maquina virtual
-      actualizaUICompartirPC("off");
-    }else{
-      //Comprobamos si la maquina ha arrancado correctamente
-      actualizaUICompartirPC("off");
-    }
-  });
+    muestraMensajeAlerta("Dejar de compartir", "Error al detener la máquina virtual. Por favor, intentelo de nuevo más adelante.", false, true);
+  }
 }
 
 /**
@@ -1063,18 +1327,48 @@ function detenerMV(url){
  * @param {String} url 
  */
 function eliminarMV(url){
-  muestraDialogCargando("Eliminando datos de compartir PC...");
-  exec('vagrant destroy -f', {'cwd': url}, (error, stdout, stderr)=>{
+  muestraDialogCargando("Eliminando MV");
+  console.log("Eliminando maquina virtual");
+  const proceso = spawn('vagrant', ['destroy',  '-f'], {'cwd': url});
+
+  proceso.stdout.on('data', (data)=>{
+    console.log("stdout: " + data );
+    muestraDialogCargando("Eliminando MV", data);
+  });
+
+  proceso.stderr.on('data', (data)=>{
+    console.log("stderr: " + data );
+  });
+
+  proceso.on('close', (code)=>{
     hideDialogCargando();
-    if(error){
-      //Error al arrancar la maquina virtual
-      actualizaUICompartirPC("off");
-    }else{
-      //Comprobamos si la maquina ha arrancado correctamente
+    if(code == 0){
+      console.log("MV eliminada correctamente");
+
+      //Envio lo de borrar el path
+      ipcRenderer.send('set-mv-path', "");
+      //Maquina arrancada satisfactoriamente
       actualizaUICompartirPC("inexistente");
+      muestraMensajeAlerta("Eliminar MV", "La máquina virtual ha sido eliminada satisfactoriamente.", false, true);
+      resetModal(modal_editar_mv, true, false, true);
+      memoria_mv = null;
+      url_mv = null;
+      cpus_mv = null;
+    }else{
+      //Error al arrancar la maquina
+      console.error("Error al eliminar la MV.");
+      muestraMensajeAlerta("Eliminar MV", "Se ha producido un error al eliminar la máquina virtual. Puede que deba eliminar manualmente los archivos generados manualmente.", false, true);
+      resetModal(modal_editar_mv, true, false, true);
+      actualizaUICompartirPC("off");
+      
     }
+
+    compruebaEstadoMV((estado)=>{
+      actualizaUICompartirPC(estado);
+    });
   });
 }
+
 /**
  * Cambia la UI de compartir PC segun el estado
  * @param {String} estado Pueden ser "on", "off", "cargando", "Inexistente", null
@@ -1112,11 +1406,12 @@ function actualizaUICompartirPC(estado, ruta=null, cpus=null, ram=null){
         ramObj.textContent = ram + "Mb";
       }
       //Al pulsar el boton dejo de compartir
-      boton_compartir_pc.onclick = ()=>{detenerMV(rutaObj.textValue)};
+      boton_compartir_pc.onclick = ()=>{detenerMV(url_mv)};
       boton_compartir_pc.classList.remove("boton-aceptar");
       boton_compartir_pc.classList.add("boton-cancelar");
+      boton_compartir_pc.textContent = "Dejar de compartir";
       boton_compartir_pc.disabled = false;
-      boton_ajustes_mv.display= "block";
+      boton_ajustes_mv.style.display= "block";
       break;
 
     case "off":
@@ -1134,8 +1429,9 @@ function actualizaUICompartirPC(estado, ruta=null, cpus=null, ram=null){
       boton_compartir_pc.onclick = comenzarCompartirPC;
       boton_compartir_pc.classList.remove("boton-cancelar");
       boton_compartir_pc.classList.add("boton-aceptar");
+      boton_compartir_pc.textContent = "Compartir PC";
       boton_compartir_pc.disabled = false;
-      boton_ajustes_mv.display= "block";
+      boton_ajustes_mv.style.display= "block";
       break;
 
     case "cargando":
@@ -1154,7 +1450,8 @@ function actualizaUICompartirPC(estado, ruta=null, cpus=null, ram=null){
       boton_compartir_pc.classList.remove("boton-cancelar");
       boton_compartir_pc.classList.add("boton-aceptar");
       boton_compartir_pc.disabled = true;
-      boton_ajustes_mv.display= "none";
+      boton_ajustes_mv.style.display= "none";
+      boton_compartir_pc.textContent = "Cargando...";
       break;
 
     case "inexistente":
@@ -1167,8 +1464,9 @@ function actualizaUICompartirPC(estado, ruta=null, cpus=null, ram=null){
       boton_compartir_pc.onclick = comenzarCompartirPC;
       boton_compartir_pc.classList.remove("boton-cancelar");
       boton_compartir_pc.classList.add("boton-aceptar");
+      boton_compartir_pc.textContent = "Compartir PC";
       boton_compartir_pc.disabled = false;
-      boton_ajustes_mv.display= "none";
+      boton_ajustes_mv.style.display= "none";
       break;
   }
   
@@ -1179,13 +1477,19 @@ function actualizaUICompartirPC(estado, ruta=null, cpus=null, ram=null){
  */
 function compruebaEstadoMV(callback){
   //Obtiene la URL
-  ipcRenderer.send('get-mv-path');
-  ipcRenderer.on('return-mv-path', (e, ruta)=>{
-    ipcRenderer.removeAllListeners('return-mv-path');
+  actualizaUICompartirPC("cargando");
+  ipcRenderer.send('get-mv-params');
+  ipcRenderer.on('return-mv-params', (e, ruta)=>{
+    ipcRenderer.removeAllListeners('return-mv-params');
     if(ruta === null){
       //La maquina no existe
       callback("inexistente");
     }else{
+      //Actualizo los datos del estado de la MV
+      url_mv = ruta.get("mv_path");
+      cpus_mv = ruta.get("cpus");
+      memoria_mv = ruta.get("ram");
+
       //Ejecuto el comando en la URL
       const url = ruta.get("mv_path");
       exec("vagrant status", {'cwd':url}, (error, stdout, stderr)=>{
@@ -1195,25 +1499,33 @@ function compruebaEstadoMV(callback){
         }
 
         const lineas = stdout.split('\n');
+        console.log("Output: " + stdout);
         let mvEncontrada = false;
-        for (let linea in lineas){
-          if(linea.includes('sharepc-test')){
+
+       lineas.forEach(linea =>{
+          console.log(linea);
+          if(!mvEncontrada && linea.includes('default')){
             mvEncontrada = true;
             if(linea.includes('running')){
               callback("on");
             }else if(linea.includes('poweroff')){
               callback("off");
+            }else if(linea.includes('not created')){
+              ipcRenderer.send("set-mv-path", "");
+              callback("inexistente")
             }else{
               callback("cargando");
             }
 
             console.log("Maquina encontrada");
-            break;
+            //break;
             
           }
-        }
+        });
+
         if (!mvEncontrada){
           console.log("Maquina no encontrada en el directorio almacenado");
+          ipcRenderer.send("set-mv-path", "");
           callback("inexistente");
         }
 
@@ -1261,6 +1573,8 @@ ipcRenderer.on('global-variables', (e, variables)=>{
   actualizaContenedores();
 
   ipcRenderer.send('get-mv-params');
+  actualizaUICompartirPC("cargando");
+
   ipcRenderer.on('return-mv-params', (e, data)=>{
     ipcRenderer.removeAllListeners('return-mv-params');
     const contenedor = document.querySelector(".contenedor-share");
@@ -1269,6 +1583,10 @@ ipcRenderer.on('global-variables', (e, variables)=>{
       actualizaUICompartirPC("inexistente");
     }else{
       //Comprobar el estado de la maquina virtual
+      console.log(data);
+      url_mv = data.get('mv_path');
+      memoria_mv = data.get('ram');
+      cpus_mv = data.get('cpus');
       compruebaEstadoMV((estado)=>{
         actualizaUICompartirPC(estado, data.get("mv_path"), data.get("cpus"), data.get("ram"));
       });
@@ -1277,4 +1595,5 @@ ipcRenderer.on('global-variables', (e, variables)=>{
 });
 
 //Hacer que, periódicamente, se pulse el boton de recargar (15s)
-setInterval(()=>{boton_recargar.click()}, 15000);
+let recargaPeriodica = setInterval(()=>{boton_recargar.click()}, 15000);
+

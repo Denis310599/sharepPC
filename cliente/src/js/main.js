@@ -5,9 +5,9 @@ const { create } = require('node:domain');
 const fs = require('fs');
 
 //Variables almacenadas necesarias para la aplicacion
-let session_id = "denis#1710420242";
-let token = "Tk-17104ljcprrgwfrtonajpqdls20242";
-let id_contenedor;
+let session_id = null;// = "denis#1710420242";
+let token = null;// = "Tk-17104ljcprrgwfrtonajpqdls20242";
+let id_contenedor = null;
 
 let host_web_socket = "ws://gusydenis.duckdns.org:28000";
 let host_API = "hqna10txtk.execute-api.eu-west-3.amazonaws.com";
@@ -212,6 +212,7 @@ ipcMain.on('set-mv-id', (e, id) =>{
 
 //Almacena el path de la maquina virtual
 ipcMain.on('set-mv-path', (e, path) =>{
+  let pathEscrita = null;
   try {
     console.log("Escribiendo en fichero de configuracion...");
     const data = fs.readFileSync(USER_DATA_PATH, 'utf-8');
@@ -225,14 +226,19 @@ ipcMain.on('set-mv-path', (e, path) =>{
     }
     
     fs.writeFileSync(USER_DATA_PATH, JSON.stringify(dataJSON));
+
+    pathEscrita = path;
   } catch(error) {
     console.log('Error retrieving user data', error);  
     // No hay datos, por lo que tengo que escribirlos
-    if(id != ""){
+    if(path != ""){
       const datosEscribir = {'mv_path': path};
       fs.writeFileSync(USER_DATA_PATH, JSON.stringify(datosEscribir));
     }
+    pathEscrita = path;
   }
+
+  e.sender.send('return-mv-path', pathEscrita);
 });
 
 //Obtencion del path de la maquina virtual
@@ -276,33 +282,38 @@ ipcMain.on('ask-mv-path', async (e)=>{
 });
 
 //Almacena los datos de una MV en el vagrantfile
-ipcMain.on('apply-mv-params', async (e, url, cpus, memoria)=>{
+ipcMain.on('apply-mv-params', async (e, url, cpus, memoria, newID)=>{
   //Obtengo el ID
   let id;
   try {
-    const data = fs.readFileSync(USER_DATA_PATH, 'utf-8');
-    const dataJSON = JSON.parse(data);
-    console.log(dataJSON)
-    if(dataJSON.mv_id){
-      id = dataJSON.mv_id;
-    }else{
+    if(newID){
       //Actualizo el valor del id
       const idAlmacenado = session_id.split("#")
       id = idAlmacenado[0]+idAlmacenado[1];
-    }
+      fs.writeFileSync(url+"/join_info.json", JSON.stringify({'mv_id': id}))
+    }else{
+      console.log("Leyendo MV_ID");
+      const data = fs.readFileSync(url+"/join_info.json", 'utf-8');
+      const dataJSON = JSON.parse(data);
+      console.log(dataJSON);
+      console.log(dataJSON.mv_id);
 
-    dataJSON.mv_id = id;
-    dataJSON.mv_path = url;
-    fs.writeFileSync(USER_DATA_PATH, JSON.stringify(dataJSON));
+      if(Object.hasOwn(dataJSON, 'mv_id')){
+        id = dataJSON.mv_id;
+        console.log("id = " + id);
+      }else{
+        id = null;
+        console.log("id (null)= " + id);
+      }
+    }
     
   } catch(error) {
-    console.log('Error, no hay ningun id almacenado', error);  
+    console.log('Error, no hay ningun id almacenado en la URL o se ha producido un error leyendo el ID existente', error);  
     // you may want to propagate the error, up to you
-    const idAlmacenado = session_id.split("#")
-    id = idAlmacenado[0]+idAlmacenado[1];
-    fs.writeFileSync(USER_DATA_PATH, JSON.stringify({'mv_id': id, 'mv_path': url}))
+    id = null;
     
   }
+  console.log("id = " + id);
 
   if(id === null){
     console.error("Error al obtener el ID");
@@ -311,14 +322,16 @@ ipcMain.on('apply-mv-params', async (e, url, cpus, memoria)=>{
   }
 
   //Muevo el VagrantFile hasta la URL
-  const pathVagrantFile = path.join(__dirname,'../assets/Vagrantfile');
-  try{
-    const contenidoVagrantfile = fs.readFileSync(pathVagrantFile, 'utf-8');
-    fs.writeFileSync(url+"/Vagrantfile", contenidoVagrantfile);
-  }catch(err){
-    console.log("Error al copiar el vagrantfile" + err);
-    e.sender.send('complete-mv-params', null)
-    return;
+  if(newID){
+    const pathVagrantFile = path.join(__dirname,'../assets/Vagrantfile');
+    try{
+      const contenidoVagrantfile = fs.readFileSync(pathVagrantFile, 'utf-8');
+      fs.writeFileSync(url+"/Vagrantfile", contenidoVagrantfile);
+    }catch(err){
+      console.log("Error al copiar el vagrantfile" + err);
+      e.sender.send('complete-mv-params', null)
+      return;
+    }
   }
 
   //Abro el fichero en la URL
@@ -329,22 +342,34 @@ ipcMain.on('apply-mv-params', async (e, url, cpus, memoria)=>{
       return;
     }
 
-    //Cambio el ID
-    let datosModificados = vagrantFile.replace(
-      /config.vm.hostname = ".+"/,
-      'config.vm.hostname = "' + id + '"'
-    );
+    let datosModificados = vagrantFile;
+    if(newID){
+      //Cambio el nombre de usuario
+      datosModificados = vagrantFile.replace(
+        /vb.name = ".+"/,
+        'vb.name = "' + id + '"'
+      );
+
+      //Cambio el ID
+      datosModificados = datosModificados.replace(
+        /config.vm.hostname = ".+"/,
+        'config.vm.hostname = "' + id + '"'
+      );
+    }
 
     //Cambio memo y cpus
     datosModificados = datosModificados.replace(
       /vb.memory = ".+"/,
       'vb.memory = "' + memoria + '"'
     );
+    
 
     datosModificados = datosModificados.replace(
       /vb.cpus = ".+"/,
       'vb.cpus = "' + cpus + '"'
     );
+
+    
 
     fs.writeFile(url + "/Vagrantfile", datosModificados, 'utf8', (error) =>{
       if(error){
@@ -430,12 +455,27 @@ ipcMain.on('almacena-kubejoin', (e, url, comando)=>{
   
   const pathSh = path.join(__dirname,'../assets/kubejoin.sh');
   try{
+    //Almaceno en el script de la MV el kubejoin
     const contenidoScript = fs.readFileSync(pathSh, 'utf-8');
     fs.writeFileSync(url+"/kubejoin.sh", contenidoScript);
 
     fs.appendFileSync(url+"/kubejoin.sh",
-          "\nsudo kubeadm join gusydenis.duckdns.org:6443 --token n6tn0u.on2l4emc5qi2ibve --discovery-token-ca-cert-hash sha256:9ba5bf25141f9dcb4ca5905c66c836eee188405e100f31cf69c7f122bc4f9044",
+          comando,
           'utf8');
+    
+
+    const ts = Math.floor(Date.now()/1000);
+    const dataJoinInfo = fs.readFileSync(url+"/join_info.json", 'utf-8');
+    const dataJoinInfoJson = JSON.parse(dataJoinInfo);
+    dataJoinInfoJson.comando = comando;
+    dataJoinInfoJson.ts = ts;
+    
+    fs.writeFileSync(url+"/join_info.json", JSON.stringify(dataJoinInfoJson));
+    
+    fs.writeFileSync(url+"/kubejoin.sh", contenidoScript);
+    fs.appendFileSync(url+"/kubejoin.sh", "sudo " + comando);
+
+
     
     e.sender.send('kubejoin-almacenado', 0);
 
@@ -444,6 +484,89 @@ ipcMain.on('almacena-kubejoin', (e, url, comando)=>{
     e.sender.send('kubejoin-almacenado', null);
     return;
   }
+
+});
+
+//funcion que comprueba la existencia del kubejoin y su ts, y la devuelve en caso de existir
+ipcMain.on('get-kubejoin-ts', (e, url)=>{
+  //Abro el fichero en la URL especificada
+  let ts = 0;
+  try{
+    //Almaceno en el script de la MV el kubejoin
+    const data = fs.readFileSync(url+"/join_info.json", 'utf-8');
+    const dataJSON = JSON.parse(data);
+
+    if(dataJSON.ts){
+      //Tengo el ts, lo envio de vuelta
+      ts = dataJSON.ts;
+    }
+
+  }catch(err){
+    console.log("Error al obtener el ts del kubejoin");
+  }
+
+  //Devuelvo el timestamp
+  e.sender.send('return-kubejoin-ts', ts);
+});
+
+
+//Comprueba si el directorio esta vacio
+ipcMain.on('check-empty-dir', (e, url)=>{
+  fs.readdir(url, function(err, files) {
+    let vacio = false;
+    if (err) {
+      // some sort of error
+      vacio = null;
+    } else {
+      if (!files.length) {
+        // directory appears to be empty
+        vacio = true;
+      }else{
+        vacio = false;
+      }
+    }
+    e.sender.send('return-empty-dir', vacio);
+    
+  });
+
+    
+});
+
+//Obtiene el directorio de descargas
+ipcMain.on('instala-vagrant', (e)=>{
+  // URL del instalador de Vagrant
+  const urlInstalador = 'https://releases.hashicorp.com/vagrant/2.4.1/vagrant_2.4.1_windows_amd64.msi';
+
+  // Obtener la ruta de la carpeta de descargas
+  const carpetaDescargas = app.getPath('downloads');
+
+  const rutaInstalador = carpetaDescargas+"/vagrant_2.4.1_windows_amd64.msi";
+    fetch(urlInstalador)
+      .then(res => {
+          const fileStream = fs.createWriteStream(rutaInstalador);
+          res.body.pipe(fileStream);
+          return new Promise((resolve, reject) => {
+              fileStream.on('finish', resolve);
+              fileStream.on('error', reject);
+          });
+      })
+      .then(() => {
+          console.log('Instalador de Vagrant descargado correctamente.');
+          // Ejecutar el instalador
+          exec(`${rutaInstalador}`, (error, stdout, stderr) => {
+              if (error) {
+                  console.error('Error al instalar Vagrant:', error);
+                  e.sender.send('return-instala-vagrant', false);
+              } else {
+                  console.log('Vagrant se ha instalado correctamente.');
+                  e.sender.send('return-instala-vagrant', true);
+              }
+          });
+      })
+      .catch(error => {
+          console.error('Error al descargar el instalador de Vagrant:', error);
+          e.sender.send('return-instala-vagrant', false);
+      });
 
 });
 
@@ -495,18 +618,21 @@ async function cambiaPantalla(pantalla, args){
       break;
     case "main":
       if(session_id===null || token===null){
+        console.log("Datos de sesion no presentes");
         if(!args.has("session_id") || !args.has("token")){
           throw("Error al cambiar a la pantalla main. Faltan las variables globales de session_id y token o no se las han pasado correctamente en los argumentos.");
         }else{
+          console.log("Actualizando datos sesion");
           session_id = args.get("session_id");
           token = args.get("token");
         }
-      }else{
-        win.loadFile("src/html/main_screen.html");
-        await win.setFullScreen(false);
-        await win.unmaximize();
-        win.setSize(1000, 720, true);
       }
+
+      win.loadFile("src/html/main_screen.html");
+      await win.setFullScreen(false);
+      await win.unmaximize();
+      win.setSize(1000, 720, true);
+
       break;
     case "RDP":
       if(session_id===null || token===null){
