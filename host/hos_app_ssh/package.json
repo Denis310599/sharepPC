@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@roamhq/wrtc": "^0.7.3",
+    "@xterm/addon-attach": "^0.11.0",
+    "patch-package": "^8.0.0",
+    "werift": "^0.19.1",
+    "ws": "^8.17.0"
+  }
+}

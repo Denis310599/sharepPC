@@ -1,7 +1,6 @@
 const { app, BrowserWindow, ipcMain, Menu, dialog} = require('electron/main');
 const path = require('node:path');
 const { desktopCapturer } = require('electron/main');
-const { create } = require('node:domain');
 const fs = require('fs');
 
 //Variables almacenadas necesarias para la aplicacion
@@ -79,6 +78,7 @@ ipcMain.on('get-global-variables', (e, pantalla)=>{
       mapaVariables.set('host_API', host_API);
       break;
     case "RDP":
+    case "SSH":
       mapaVariables.set('token', token);
       mapaVariables.set('session_id', session_id);
       mapaVariables.set('id_contenedor', id_contenedor);
@@ -454,7 +454,12 @@ ipcMain.on('almacena-kubejoin', (e, url, comando)=>{
   //Copio el fichero a la URL
   
   const pathSh = path.join(__dirname,'../assets/kubejoin.sh');
+  const pathStart = path.join(__dirname,'../assets/start.sh');
   try{
+    //Almaceno el comando start.sh
+    const contenidoStart = fs.readFileSync(pathStart, 'utf-8');
+    fs.writeFileSync(url+"/start.sh", contenidoStart);
+    
     //Almaceno en el script de la MV el kubejoin
     const contenidoScript = fs.readFileSync(pathSh, 'utf-8');
     fs.writeFileSync(url+"/kubejoin.sh", contenidoScript);
@@ -490,7 +495,9 @@ ipcMain.on('almacena-kubejoin', (e, url, comando)=>{
 //funcion que comprueba la existencia del kubejoin y su ts, y la devuelve en caso de existir
 ipcMain.on('get-kubejoin-ts', (e, url)=>{
   //Abro el fichero en la URL especificada
+  let ret = new Map();
   let ts = 0;
+  let mv_id;
   try{
     //Almaceno en el script de la MV el kubejoin
     const data = fs.readFileSync(url+"/join_info.json", 'utf-8');
@@ -500,13 +507,21 @@ ipcMain.on('get-kubejoin-ts', (e, url)=>{
       //Tengo el ts, lo envio de vuelta
       ts = dataJSON.ts;
     }
+    if(dataJSON.mv_id){
+      mv_id = dataJSON.mv_id;
+    }
 
   }catch(err){
     console.log("Error al obtener el ts del kubejoin");
   }
 
   //Devuelvo el timestamp
-  e.sender.send('return-kubejoin-ts', ts);
+  ret.set('ts', ts);
+  ret.set('id', mv_id)
+
+  //Obtengo la id de la maquina
+
+  e.sender.send('return-kubejoin-ts', ret);
 });
 
 
@@ -527,9 +542,68 @@ ipcMain.on('check-empty-dir', (e, url)=>{
     }
     e.sender.send('return-empty-dir', vacio);
     
-  });
+  });   
+});
 
-    
+//Funcion que actualiza la IP del kubejoin
+ipcMain.on('set-ip-mv', (e, url, ip)=>{
+  //Abro el fichero del shell
+  console.log("Modificando IP...");
+  console.log("URL: "+url + ".IP: "+ip);
+  fs.readFile(url + "/kubejoin.sh", 'utf-8', (err, kubejoin)=>{
+    try{
+      if(err){
+        throw("Error abriendo el Kubejoin");
+      }
+
+      datosModificados = kubejoin.replace(
+        /KUBELET_EXTRA_ARGS=--node-ip=.+/,
+        'KUBELET_EXTRA_ARGS=--node-ip=' + ip
+      );
+      console.log(datosModificados);
+  
+      
+  
+      fs.writeFile(url + "/kubejoin.sh", datosModificados, 'utf8', (error) =>{
+        if(error){
+          console.log("Error al escribir el kubejoin");
+          throw("Error al escribir el kubejioin");
+        }else{
+          console.log("kubejoin escrito correctamente");
+
+          //Ahora almaceno el yaml de cambiar la ip
+          const pathIpConfig = path.join(__dirname,'../assets/ipConfig.yaml');
+          try{
+            const contenidoIpConfig = fs.readFileSync(pathIpConfig, 'utf-8');
+
+            //Busco y modifico la ip en el contenido
+            const contenidoIpConfigActualizado = contenidoIpConfig.replace(
+              /dhcp4: no(\r\n|\r|\n).+/,
+              'dhcp4: no\n      addresses: ['+ip+'/24]'
+            );
+
+            console.log(contenidoIpConfigActualizado);
+
+            fs.writeFileSync(url+"/ipConfig.yaml", contenidoIpConfigActualizado);
+            
+            //Envio la respuesta al renderer
+            e.sender.send('return-set-ip-mv', 0);
+          }catch(err){
+            console.log("Error al copiar el ipConfig" + err);
+            throw("Error al copiar el ipConfig")
+          }
+        }
+      });
+    }catch (error){
+      console.error("Error al actualizar la IP. " + error);
+
+      e.sender.send('return-set-ip-mv', null);
+      return;
+    }
+  });  
+  //Busco con una expresion regular donde cambiar la IP y la cambio
+
+  //Devuelvo respuesta al renderer
 });
 
 //Obtiene el directorio de descargas
@@ -615,6 +689,8 @@ async function cambiaPantalla(pantalla, args){
       await win.setFullScreen(false);
       await win.unmaximize();
       win.setSize(1000, 720, true);
+      session_id = null;
+      token = null;
       break;
     case "main":
       if(session_id===null || token===null){
@@ -643,6 +719,19 @@ async function cambiaPantalla(pantalla, args){
         }else{
           id_contenedor = args.get("id_contenedor");
           win.loadFile("src/html/remote_desktop.html");
+        }
+      }
+      break;
+    
+    case "SSH":
+      if(session_id===null || token===null){
+        throw("Faltan las variables globales de session_id y token");
+      }else{
+        if(!args.has("id_contenedor")){
+          throw("Error al cambiar a la pantalla SSH. No se ha especificado un id de contenedor.")
+        }else{
+          id_contenedor = args.get("id_contenedor");
+          win.loadFile("src/html/ssh.html");
         }
       }
       break;

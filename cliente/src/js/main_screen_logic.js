@@ -265,7 +265,12 @@ function botonConectarPulsado(elem){
   //Me cambio de pantalla pasando el identificador al main para que podamos acceder al contenedor.
   const args = new Map();
   args.set('id_contenedor', contenedor.id);
-  ipcRenderer.send('cambia-pantalla', "RDP", args);
+
+  if(contenedor.tipo == "Terminal"){
+    ipcRenderer.send('cambia-pantalla', "SSH", args);
+  }else{
+    ipcRenderer.send('cambia-pantalla', "RDP", args);
+  }
 }
 
 /**
@@ -286,7 +291,7 @@ function botonCrearPulsado(){
   const cpus = parseInt(elemCpu.value);
   const memSize = parseInt(modal_creacion.querySelector(".input-mem-size").value);
   const memType = modal_creacion.querySelector(".selector.input-mem-type").value == "Mi" ? 0: 1;
-  //const tipoConexion (Por ahora es siempre RDP)
+  const tipoConexion = parseInt(modal_creacion.querySelector(".input-connection-type").value);
   const mensajeError = modal_creacion.querySelector(".error-message");
   
   //Comrpuebo que los datos introducidos son correctos
@@ -301,7 +306,9 @@ function botonCrearPulsado(){
                                    'cpus': cpus,
                                    'mem_s': memSize,
                                    'mem_t': memType,
-                                   'nombre': nombreContenedor},
+                                   'nombre': nombreContenedor,
+                                   'conexion': tipoConexion,
+                                   'imagen': "host"},
   (data, error)=>{
     hideDialogCargando();
     try{
@@ -420,6 +427,7 @@ function actualizaModalEdicion(contenedor){
   modal_edicion.querySelector(".input-mem-type").value = contenedor.memo_t;
   modal_edicion.querySelector(".input-cpus").value = contenedor.cpus;
   modal_edicion.querySelector(".id-contenedor").textContent = contenedor.id;
+  modal_edicion.querySelector(".selector.input-connection-type").value = contenedor.tipo;
 }
 
 function botonEliminarPulsado(){
@@ -492,6 +500,7 @@ function botonGuardarEdicionPulsado(){
   const mem_t = modal_edicion.querySelector(".input-mem-type");
   const nombre = modal_edicion.querySelector(".nombre-contenedor");
   const cpus = modal_edicion.querySelector(".input-cpus");
+  const tipoConexion = parseInt(modal_creacion.querySelector(".tipo-connection-type").value);
 
   //Actualizamos la UI del contenedor para que el usuario no pueda hacer nada
   botonGuardar.disabled = true;
@@ -542,7 +551,9 @@ function botonGuardarEdicionPulsado(){
                                             'mem_s': mem_s.value,
                                             'mem_t': memTypeAux,
                                             'nombre': nombre.value,
-                                            'id': contenedor.id},
+                                            'id': contenedor.id,
+                                            'imagen': "host",
+                                            'conexion': tipoConexion},
   (data, error)=>{
     hideDialogCargando();
     try{
@@ -799,10 +810,10 @@ function switchModoPulsado(){
   //Mostramos una pantalla u otra segun el switch este activo o no
   if(checkbox.checked == true){
     //Se puede cambiar a modo host si no tengo ningun contenedor remoto
-    if(lista_maquinas.length != 0){
+    /*if(lista_maquinas.length != 0){
       checkbox.checked = false;
       return
-    }
+    }*/
 
     txtCliente.classList.add("disabled");
     txtHost.classList.remove("disabled");
@@ -1170,8 +1181,16 @@ function arrancaMv(url){
   //Compruebo si tengo el kubejoin por algun lado junto con el ts (en la url)
   ipcRenderer.send('get-kubejoin-ts', url);
 
-  ipcRenderer.on('return-kubejoin-ts', (e, ts_almacenada)=>{
+  ipcRenderer.on('return-kubejoin-ts', (e, dataAlmacenada)=>{
     ipcRenderer.removeAllListeners('return-kubejoin-ts');
+
+    const ts_almacenada = dataAlmacenada.get('ts');
+    const mv_id = dataAlmacenada.get('id'); 
+    //Si no tengo el id almacenado no puedo asignar una IP asi que estamos mal
+    if(mv_id == null){
+      hideDialogCargando();
+      muestraMensajeAlerta("Error al arrancar la MV", "No se ha encontrado el identificador de la maquina virtual, por lo que es imposible asignar una IP", false, true);
+    }
     //Consulto la API por si ha cambiado
     enviaPeticionAPI("POST", session_token, {'action': "getKubejoin" , 'ts': ts_almacenada}, 
     (dataAPI, errorAPI)=>{
@@ -1187,11 +1206,11 @@ function arrancaMv(url){
             if(jsonRecibido.code == 0){
               console.log("No hace falta actualizar kubejoin");
               //Comando actualizado, no hay que hacer nada
-              ejecutaVagrantUp(url, null);
+              ejecutaVagrantUp(url, null, mv_id);
             }else if(jsonRecibido.code == 1){
               //Comando necesita actualizarse, se necesita reprovisionar la MV
               console.log("Es necesario actualizar el kubejoin");
-              ejecutaVagrantUp(url, jsonRecibido.args.comando);
+              ejecutaVagrantUp(url, jsonRecibido.args.comando, mv_id);
             }
           }else{
             throw("Error en la respuesta del servidor, no reconocida.");
@@ -1213,9 +1232,10 @@ function arrancaMv(url){
  * @param {String} url Ubicacion de la maquina virtual
  * @param {String} comando El comando de kubejoin en caso de ser necesario
  */
-function ejecutaVagrantUp(url, comando){
+function ejecutaVagrantUp(url, comando, mvid){
   muestraDialogCargando("Arrancando PC compartido");
   console.log("Ejecutando vagrant up...");
+  //Funcion que ejecuta el vagrant up
   const funcionVagrantUp = ()=>{
     //Segun si tengo comando, obligo a ejecutar el script de provision o no
     let vagrantCommand = 'vagrant';
@@ -1256,6 +1276,67 @@ function ejecutaVagrantUp(url, comando){
     });
   };
 
+  //Funcion que asigna la IP a la maquina virtual
+  const funcionActualizaIp = ()=>{
+    //Hago la consulta a la API
+    enviaPeticionAPI('POST', session_token, {'mv_id': mvid, 'action': 'getMvIp'},
+      (dataAPI, errorAPI) => {
+        try{
+          if(errorAPI){
+            //Se ha producido un error en la API, no se puede arrancar
+            throw("Error en la API (Internal Server Error)");
+          }else{
+            //He obtenido respuesta, veo si tengo que actualizar o no la ejecucion
+            const jsonRecibido = JSON.parse(dataAPI);
+            console.log(jsonRecibido);
+            if('code' in jsonRecibido){
+              if(jsonRecibido.code == 0){
+                console.log("IP obtenida correctamente " + jsonRecibido.args);
+                //Actualizo la IP de la maquina virtual
+                ipcRenderer.send('set-ip-mv', url, jsonRecibido.args);
+
+                ipcRenderer.on('return-set-ip-mv', (e, returnIpConfig)=>{
+                  ipcRenderer.removeAllListeners('return-set-ip-mv');
+                  if(returnIpConfig !== null){
+                    //Ip asignada correctamente
+                    funcionVagrantUp();
+                  }else{
+                    //Error al asignar la IP
+                    console.error("Se ha producido un error al asignar la IP ");
+                    //Se h aproducido un error al obtener la IP
+                    muestraMensajeAlerta("Error al arrancar MV", "Se ha producido un error interno, por favor intentelo de nuevo más adelante.", false, true);
+                    hideDialogCargando();
+                    
+                    compruebaEstadoMV((estado)=>{
+                      actualizaUICompartirPC(estado);
+                    });
+                  }
+                });
+              }else if(jsonRecibido.code == 1){
+                //Comando necesita actualizarse, se necesita reprovisionar la MV
+                console.log("Error, la maquina virtual que queria obtener la IP no pertenece a este usuario");
+                throw("Error en la respuesta del servidor, usuario no autorizado");
+              }
+            }else{
+              throw("Error en la respuesta del servidor, no reconocida.");
+            }
+          }
+        }catch(err){
+          console.error("Se ha producido un error consultando a la API. "+ err);
+         //Se h aproducido un error al obtener la IP
+         muestraMensajeAlerta("Error al arrancar MV", "Se ha producido un error al comunicarse con el servidor, por favor intentelo de nuevo más adelante.", false, true);
+         hideDialogCargando();
+         
+         compruebaEstadoMV((estado)=>{
+           actualizaUICompartirPC(estado);
+         });
+        }
+      }
+    )
+  };
+
+
+  //Se rellena o no el kubejoin con el comando
   if(comando !== null){
     console.log("Almacenando comando kubejoin...")
     ipcRenderer.send('almacena-kubejoin', url, comando);
@@ -1267,14 +1348,14 @@ function ejecutaVagrantUp(url, comando){
         muestraMensajeAlerta("Error Creacion MV", "Se ha producido un error al crear la maquina virtual");
         console.log("Error al escribir el kubejoin");
       }else{
-        //Si el comando se almacena correctametne puedo ejecutar arranque
+        //Si el comando se almacena correctametne puedo ejecutar arranque, primero almaceno la IP
         console.log("Kubejoin almacenado correctamente");
-        funcionVagrantUp();
+        funcionActualizaIp();
       }
     });
   }else{
-    //Ejecuto el arranque normal
-    funcionVagrantUp();
+    //Actualizo la IP para despues arrancar
+    funcionActualizaIp();
   }
 
 }
@@ -1304,6 +1385,10 @@ function detenerMV(url){
         muestraMensajeAlerta("Detener MV", "La máquina virtual se ha detenido correctamente.", false, true);
         //Maquina arrancada satisfactoriamente
         actualizaUICompartirPC("off");
+
+        //Desasigno la IP a la maquina
+        eliminaIpMv(url);
+        
       }else{
         //Error al arrancar la maquina
         console.error("Error al detener la MV.");
@@ -1345,6 +1430,9 @@ function eliminarMV(url){
     if(code == 0){
       console.log("MV eliminada correctamente");
 
+      //Desasigno la IP a la maquina
+      eliminaIpMv(url);
+
       //Envio lo de borrar el path
       ipcRenderer.send('set-mv-path', "");
       //Maquina arrancada satisfactoriamente
@@ -1354,8 +1442,10 @@ function eliminarMV(url){
       memoria_mv = null;
       url_mv = null;
       cpus_mv = null;
+
+      
     }else{
-      //Error al arrancar la maquina
+      //Error al eliminar la maquina
       console.error("Error al eliminar la MV.");
       muestraMensajeAlerta("Eliminar MV", "Se ha producido un error al eliminar la máquina virtual. Puede que deba eliminar manualmente los archivos generados manualmente.", false, true);
       resetModal(modal_editar_mv, true, false, true);
@@ -1510,9 +1600,11 @@ function compruebaEstadoMV(callback){
               callback("on");
             }else if(linea.includes('poweroff')){
               callback("off");
+              eliminaIpMv(url);
             }else if(linea.includes('not created')){
               ipcRenderer.send("set-mv-path", "");
-              callback("inexistente")
+              callback("inexistente");
+              eliminaIpMv(url);
             }else{
               callback("cargando");
             }
@@ -1533,7 +1625,26 @@ function compruebaEstadoMV(callback){
       });
     }
   });
-  //Ejecuta el comando vagrant status en la ubicacion especificada
+}
+
+/**
+ * Funcion que desasigna la ip asociada a la maquina virtual
+ */
+function eliminaIpMv(url){
+  //Desasigno la IP a la maquina
+  ipcRenderer.send('get-kubejoin-ts', url);
+
+  ipcRenderer.on('return-kubejoin-ts', (e, dataAlmacenada)=>{
+    ipcRenderer.removeAllListeners('return-kubejoin-ts');
+
+    const ts_almacenada = dataAlmacenada.get('ts');
+    const mv_id = dataAlmacenada.get('id'); 
+    //Si no tengo el id almacenado no puedo asignar una IP asi que estamos mal
+    if(mv_id == null){
+     return
+    }
+    enviaPeticionAPI('POST', session_token, {'mv_id': mv_id, 'action': 'rmMvIp'}, (data, err)=>{console.log("Respuesta de la API. Error: " + err + ". Datos: " + data)});
+  });
 }
 /***********************************
  *    Eventos

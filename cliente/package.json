@@ -10,9 +10,10 @@
   "author": "Denis Ortega Luis",
   "license": "ISC",
   "devDependencies": {
-    "electron": "^29.1.0"
+    "electron": "^29.3.1"
   },
   "dependencies": {
+    "@xterm/xterm": "^5.5.0",
     "bulma": "^0.9.4",
     "ws": "^8.16.0"
   }

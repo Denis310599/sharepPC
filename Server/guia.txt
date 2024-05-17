@@ -23,7 +23,7 @@ docker push NAME[:TAG]
 
 -Creo los credenciales para kubermetes (una de las siguientes)
 kubectl create secret generic regcred --from-file=.dockerconfigjson=/vagrant/docker/config.json --type=kubernetes.io/dockerconfigjson
-kubectl create secret docker-registry regcred --docker-server=<your-registry-server> --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>
+kubectl create secret docker-registry regcred --docker-server=https://index.docker.io/v1/ --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>
 
 -Configuro el fichero de deployment con las varialbes y los secrets
 
@@ -49,3 +49,6 @@ WantedBy=multi-user.target
 
 Configuramos systemd, dando los permisos necesarios al fichero service
 
+
+
+Si por algun casual peta el calico, es que el daemon nose ha terminado de configurar y hay que tirar los pods de calico y se arreglara solo.

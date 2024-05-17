@@ -17,7 +17,7 @@ apt-get update -y
 
 # Install CRI-O Runtime
 
-OS="xUbuntu_22.04"
+OS="Debian_11"
 
 VERSION="1.29"
 

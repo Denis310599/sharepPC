@@ -5,8 +5,10 @@ Vagrant.configure("2") do |config|
   config.vm.box = "denis31599/sharepc"
   
   config.vm.hostname = "test-worker"
-  
-  config.vm.provision :shell, :path => "kubejoin.sh"
+  config.vm.box_version = "0.0.2"
+  config.ssh.username= "vagrant"
+  config.ssh.password="vagrant"
+  config.vm.provision :shell, :path => "start.sh"
 
   
   config.vm.provider "virtualbox" do |vb|

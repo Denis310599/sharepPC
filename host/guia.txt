@@ -3,6 +3,12 @@ Creamos una maquina virutal basada en bento/ubuntu_22.04
 Instalamos todo lo necesario con "sudo ./common.sh".
 
 Cambiamos las claves publicas del ssh en ~/.ssh/authorized_keys" por las del github.
+https://github.com/hashicorp/vagrant/blob/main/keys/vagrant.pub
+
+Cambiamos el crontab para que se ejecute el comando de cambiar la IP al principio
+
+crontab -e
+@reboot path/to/script
 
 Comprimimos la maquina con "vagrant package --base sharepc"
 
