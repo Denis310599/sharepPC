@@ -5,7 +5,7 @@ set -euxo pipefail
 
 # Variable Declaration
 
-KUBERNETES_VERSION="1.29"
+KUBERNETES_VERSION="1.28"
 
 # disable swap
 swapoff -a
@@ -35,18 +35,15 @@ EOF
 
 sysctl --system
 
-cat <<EOF | tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
-deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/ /
-EOF
-cat <<EOF | tee /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:$VERSION.list
-deb http://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VERSION/$OS/ /
-EOF
+echo "deb [signed-by=/usr/share/keyrings/libcontainers-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable.list
+echo "deb [signed-by=/usr/share/keyrings/libcontainers-crio-archive-keyring.gpg] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VERSION/$OS/ /" > /etc/apt/sources.list.d/devel:kubic:libcontainers:stable:cri-o:$VERSION.list
 
-curl -L https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:$VERSION/$OS/Release.key | sudo apt-key --keyring /etc/apt/trusted.gpg.d/libcontainers.gpg add -
-curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/Release.key | sudo apt-key --keyring /etc/apt/trusted.gpg.d/libcontainers.gpg add -
+mkdir -p /usr/share/keyrings
+curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/$OS/Release.key | gpg --dearmor -o /usr/share/keyrings/libcontainers-archive-keyring.gpg
+curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/$VERSION/$OS/Release.key | gpg --dearmor -o /usr/share/keyrings/libcontainers-crio-archive-keyring.gpg
 
 apt-get update
-apt-get install cri-o cri-o-runc -y
+apt-get install cri-o cri-o-runc
 
 systemctl daemon-reload
 systemctl enable crio --now
@@ -73,6 +70,7 @@ EOF
 PUBLIC_IP_ACCESS="true"
 NODENAME=$(hostname -s)
 POD_CIDR="192.168.0.0/16"
+SERVICE_CIDR="172.16.0.0/12"
 
 # Pull required images
 
@@ -89,7 +87,7 @@ elif [[ "$PUBLIC_IP_ACCESS" == "true" ]]; then
 
     MASTER_PUBLIC_IP=gusydenis.duckdns.org
 	#kubeadm config images pull 
-    kubeadm init --control-plane-endpoint="$MASTER_PUBLIC_IP" --apiserver-cert-extra-sans="$MASTER_PUBLIC_IP" --pod-network-cidr="$POD_CIDR" --node-name "$NODENAME" --ignore-preflight-errors Swap --cri-socket=unix:///var/run/crio/crio.sock
+    kubeadm init --control-plane-endpoint="$MASTER_PUBLIC_IP" --apiserver-cert-extra-sans="$MASTER_PUBLIC_IP" --pod-network-cidr="$POD_CIDR" --service-cidr="$SERVICE_CIDR" --node-name "$NODENAME" --ignore-preflight-errors Swap --cri-socket=unix:///var/run/crio/crio.sock
 
 else
     echo "Error: MASTER_PUBLIC_IP has an invalid value: $PUBLIC_IP_ACCESS"
@@ -98,14 +96,36 @@ fi
 
 # Configure kubeconfig
 
-mkdir -p "$HOME"/.kube
-cp -i /etc/kubernetes/admin.conf "$HOME"/.kube/config
-chown "$(id -u)":"$(id -g)" "$HOME"/.kube/config
+mkdir -p /root/.kube
+cp -i /etc/kubernetes/admin.conf /root/.kube/config
+chown "$(id -u)":"$(id -g)" /root/.kube/config
+
+#Para configurar calicoctl
+#Me descargo el binario
+#curl -L https://github.com/projectcalico/calico/releases/download/v3.26.4/calicoctl-linux-amd64 -o calicoctl
+#chmod +x ./calicoctl
+#
+#lo muevo a la carpeta del path (/usr/local/bin)
+#Creo el fichero de configuracion calico.cfg
+#Copio el archivo de config en /etc/calico/calicoctl.cfg
+
 
 # Install Claico Network Plugin Network 
-kubectl apply -f kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+#kubectl apply -f kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 #kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/tigera-operator.yaml
 
 #curl https://raw.githubusercontent.com/projectcalico/calico/v3.26.1/manifests/custom-resources.yaml -O
+#sudo kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.4/manifests/tigera-operator.yaml
+#sudo kubectl create -f custom-resources.yaml
+#sudo kubectl apply -f custom-install.yaml
+#sudo kubectl calico create -f config-ip.yaml
 
-#kubectl create -f custom-resources.yaml
+#sudo kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(sudo kubectl version | base64 | tr -d '\n')"
+
+sudo kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+
+echo ' '
+echo '**********************************'
+echo master node configurado correctamente
+echo '**********************************'
