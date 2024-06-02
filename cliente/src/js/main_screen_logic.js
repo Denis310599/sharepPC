@@ -757,6 +757,7 @@ function muestraDialogCargando(titulo, contenido = null){
     document.getElementById("contenidoModalCargando").textContent = "";
   }
 
+  modal_cargando.classList.remove("out");
   //Muestro el modal
   if( modal_cargando.style.display != 'block'){
     modal_cargando.style.display = "block";
@@ -773,6 +774,8 @@ function muestraDialogCargando(titulo, contenido = null){
       modal_cargando.querySelector('.modal-content').classList.remove("in");
     }
   }
+
+
 
 }
 
@@ -885,10 +888,12 @@ function instalarVagrant(){
   // URL del instalador de Vagrant
   const urlInstalador = 'https://releases.hashicorp.com/vagrant/2.4.1/vagrant_2.4.1_windows_amd64.msi'; // Cambia la URL según la versión y el sistema operativo
 
+  muestraDialogCargando("Instalando Vagrant");
   ipcRenderer.send('instala-vagrant');
 
   ipcRenderer.on('return-instala-vagrant', (e, exito)=>{
     ipcRenderer.removeAllListeners('return-instala-vagrant');
+    hideDialogCargando();
     
     //Si se ha instalado correctamente continuo
     if(exito){
@@ -1019,6 +1024,7 @@ function muestraYConfiguraModalCreacionMV(){
   const memSize = modal_crear_mv.querySelector(".input-mem-size");
   const memType = modal_crear_mv.querySelector(".input-mem-type");
   const cpus = modal_crear_mv.querySelector(".input-cpus");
+  pathMV = modal_crear_mv.querySelector(".input-dato.ruta-mv").value;
 
   const mensajeError = modal_crear_mv.querySelector(".error-message");
 
@@ -1240,9 +1246,9 @@ function ejecutaVagrantUp(url, comando, mvid){
     //Segun si tengo comando, obligo a ejecutar el script de provision o no
     let vagrantCommand = 'vagrant';
     let args = ['up'];
-    if(comando !== null){
+    //if(comando !== null){
       args = ['up', '--provision'];
-    }
+    //}
 
     //Abro la maquina virtual
     actualizaUICompartirPC("cargando");
@@ -1259,15 +1265,26 @@ function ejecutaVagrantUp(url, comando, mvid){
 
     proceso.on('close', (code)=>{
       console.log("Comando vagrant up ejecutado");
-      hideDialogCargando();
+      
       if(code == 0){
         //Maquina arrancada satisfactoriamente
+        hideDialogCargando();
         muestraMensajeAlerta("Compartir PC", "La máquina virtual se ha arrancando correctamente", false, true);
         resetModal(modal_crear_mv, true, false, true);
         actualizaUICompartirPC("on");
       }else{
-        //Error al arrancar la maquina
-        actualizaUICompartirPC("off");
+        setTimeout(()=>{
+          hideDialogCargando();
+          muestraMensajeAlerta("Compartir PC", "Se ha producido un error al arrancar la maquina virtual y se ha cerrado", false, true);
+  
+          //Error al arrancar la maquina
+          detenerMV(url, "Error al arrancar la MV. Cerrando...");
+        }, 5000);
+
+        
+        
+
+        //actualizaUICompartirPC("off");
       }
 
       compruebaEstadoMV((estado)=>{
@@ -1364,14 +1381,20 @@ function ejecutaVagrantUp(url, comando, mvid){
  * Función que detiene el funcionamiento de una máquina virtual
  * @param {String} url 
  */
-function detenerMV(url){
+function detenerMV(url, mensaje = null){
   console.log("Deteniendo VM");
-  muestraDialogCargando("Deteniendo MV");
+  var mensajeCargando = "";
+  if (mensaje === null){
+    mensajeCargando = "Deteniendo MV";
+  }else{
+    mensajeCargando = mensaje;
+  }
+  muestraDialogCargando(mensajeCargando);
   try{
     const proceso = spawn('vagrant', ['halt'], {'cwd': url});
     proceso.stdout.on('data', (data)=>{
       console.log("stdout: " + data );
-      muestraDialogCargando("Deteniendo MV", data);
+      muestraDialogCargando(mensajeCargando, data);
     });
 
     proceso.stderr.on('data', (data)=>{
@@ -1382,7 +1405,10 @@ function detenerMV(url){
       hideDialogCargando();
       if(code == 0){
         console.log("MV cerrada correctamente");
-        muestraMensajeAlerta("Detener MV", "La máquina virtual se ha detenido correctamente.", false, true);
+        //Se muestra el mensaje unicamente si se ha detenido a posta y no por consecuencia de
+        if(mensaje === null){
+          muestraMensajeAlerta("Detener MV", "La máquina virtual se ha detenido correctamente.", false, true);
+        }
         //Maquina arrancada satisfactoriamente
         actualizaUICompartirPC("off");
 
@@ -1392,7 +1418,11 @@ function detenerMV(url){
       }else{
         //Error al arrancar la maquina
         console.error("Error al detener la MV.");
-        muestraMensajeAlerta("Error al detener MV", "Se ha producido un error al detener la máquina virtual. Puede que siga abierta en segundo plano.", false, true);
+        hideDialogCargando();
+        //Se muestra el mensaje unicamente si se ha detenido a posta y no por consecuencia de
+        if(mensaje === null){
+          muestraMensajeAlerta("Error al detener MV", "Se ha producido un error al detener la máquina virtual. Puede que siga abierta en segundo plano. Por favor deja de compartir y vuelve a intentar más adelante", false, true);
+        }
         actualizaUICompartirPC("off");
       }
 
@@ -1606,7 +1636,7 @@ function compruebaEstadoMV(callback){
               callback("inexistente");
               eliminaIpMv(url);
             }else{
-              callback("cargando");
+              callback("off");
             }
 
             console.log("Maquina encontrada");

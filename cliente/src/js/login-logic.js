@@ -168,6 +168,13 @@ function enviaPeticionAPI(peticion, tk, args, callback){
     res.on('data', d =>{
       console.log(data);
       console.log("Respuesta de la API recibida");
+      if(d != null){
+        try{
+          console.log(JSON.parse(d));
+        }catch(e){
+          console.log("Error al procesar el json de la respuesta de la API. "+e);
+        }
+      }
       callback(d, false);
     });
   });

@@ -2,6 +2,8 @@ const { app, BrowserWindow, ipcMain, Menu, dialog} = require('electron/main');
 const path = require('node:path');
 const { desktopCapturer } = require('electron/main');
 const fs = require('fs');
+const https = require('https');
+const { exec } = require('child_process');
 
 //Variables almacenadas necesarias para la aplicacion
 let session_id = null;// = "denis#1710420242";
@@ -387,12 +389,13 @@ ipcMain.on('apply-mv-params', async (e, url, cpus, memoria, newID)=>{
 ipcMain.on('get-mv-params', async (e)=>{
   console.log("Obteniendo los parametros de la MV")
   //Compruebo si tengo URL
-  let ret = new Map();
+  let ret = null
   try {
     const data = fs.readFileSync(USER_DATA_PATH, 'utf-8');
     const dataJSON = JSON.parse(data);
     console.log(dataJSON)
     if(dataJSON.mv_path){
+      ret = new Map();
       ret.set('mv_path', dataJSON.mv_path);
     }else{
       ret = null;
@@ -494,6 +497,7 @@ ipcMain.on('almacena-kubejoin', (e, url, comando)=>{
 
 //funcion que comprueba la existencia del kubejoin y su ts, y la devuelve en caso de existir
 ipcMain.on('get-kubejoin-ts', (e, url)=>{
+  console.log("Obteniendo ts y ID de la MV");
   //Abro el fichero en la URL especificada
   let ret = new Map();
   let ts = 0;
@@ -521,6 +525,7 @@ ipcMain.on('get-kubejoin-ts', (e, url)=>{
 
   //Obtengo la id de la maquina
 
+  console.log(ret);
   e.sender.send('return-kubejoin-ts', ret);
 });
 
@@ -579,7 +584,7 @@ ipcMain.on('set-ip-mv', (e, url, ip)=>{
             //Busco y modifico la ip en el contenido
             const contenidoIpConfigActualizado = contenidoIpConfig.replace(
               /dhcp4: no(\r\n|\r|\n).+/,
-              'dhcp4: no\n      addresses: ['+ip+'/24]'
+              'dhcp4: no\n      addresses: ['+ip+'/8]'
             );
 
             console.log(contenidoIpConfigActualizado);
@@ -615,32 +620,35 @@ ipcMain.on('instala-vagrant', (e)=>{
   const carpetaDescargas = app.getPath('downloads');
 
   const rutaInstalador = carpetaDescargas+"/vagrant_2.4.1_windows_amd64.msi";
-    fetch(urlInstalador)
-      .then(res => {
+  try{  
+    https.get(urlInstalador, (res)=>{
           const fileStream = fs.createWriteStream(rutaInstalador);
-          res.body.pipe(fileStream);
-          return new Promise((resolve, reject) => {
-              fileStream.on('finish', resolve);
-              fileStream.on('error', reject);
+          res.pipe(fileStream);
+
+          fileStream.on('finish', ()=>{
+            fileStream.close(()=>{
+              console.log('Instalador de Vagrant descargado correctamente.');
+              // Ejecutar el instalador
+              exec(`${rutaInstalador}`, (error, stdout, stderr) => {
+                  if (error) {
+                      console.error('Error al instalar Vagrant:', error);
+                      e.sender.send('return-instala-vagrant', false);
+                  } else {
+                      console.log('Vagrant se ha instalado correctamente.');
+                      e.sender.send('return-instala-vagrant', true);
+                  }
+              });
+            });
           });
-      })
-      .then(() => {
-          console.log('Instalador de Vagrant descargado correctamente.');
-          // Ejecutar el instalador
-          exec(`${rutaInstalador}`, (error, stdout, stderr) => {
-              if (error) {
-                  console.error('Error al instalar Vagrant:', error);
-                  e.sender.send('return-instala-vagrant', false);
-              } else {
-                  console.log('Vagrant se ha instalado correctamente.');
-                  e.sender.send('return-instala-vagrant', true);
-              }
-          });
-      })
-      .catch(error => {
-          console.error('Error al descargar el instalador de Vagrant:', error);
-          e.sender.send('return-instala-vagrant', false);
+      }).on('error', (err) => {
+        fs.inlink(rutaInstalador);
+        throw("Error en la peticion HTTP. " + err);
       });
+
+    }catch(error){
+      console.error('Error al descargar el instalador de Vagrant:', error);
+      e.sender.send('return-instala-vagrant', false);
+    }
 
 });
 
