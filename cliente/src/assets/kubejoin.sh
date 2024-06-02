@@ -13,6 +13,6 @@ EOF
 
 #Reinicio el kubeadm
 sudo kubeadm reset -f
-sudo rm -rf /etc/cni/net.d
+#sudo rm -rf /etc/cni/net.d
 
 #Comando para kubejoin

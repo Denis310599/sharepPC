@@ -413,7 +413,7 @@ function procesaMensajeDataChannel(event){
     const dataJSON = JSON.parse(mensaje);
     if(dataJSON.datos == '\r\n*** SSH CONNECTION CLOSED ***\r\n'){
         //Si la conexion SSH se cierra, me salgo
-        desconectar();
+        //desconectar();
     }
 
     if(term !== null){

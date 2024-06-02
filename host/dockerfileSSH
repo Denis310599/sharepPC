@@ -23,17 +23,29 @@ WORKDIR /usr/test
 
 COPY shared /usr/shared
 
-RUN cp /usr/shared/webrtc_linux2/package.json /usr/test/package.json
+RUN cp /usr/shared/webrtc_linux_ssh/package.json /usr/test/package.json
 
 RUN apt update -y 
 RUN apt-get install -y build-essential
 RUN apt-get install -y libpng-dev
 
 RUN npm install ws --en-dev
+RUN npm install patch-package --en-dev
+RUN npm install @roamhq/wrtc --en-dev
 
 WORKDIR /usr
 
 RUN cp -r shared/webrtc_linux_ssh/src test/src
+
+#Instalo sshd
+RUN apt-get update && apt-get install -y openssh-server
+# Set root password for SSH access
+RUN echo 'root:root' | chpasswd
+RUN sed 's/^#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config -i
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+RUN mkdir /var/run/sshd
+EXPOSE 22
 
 #RUN mv test/src/package.json test
 
@@ -44,4 +56,4 @@ RUN cp -r shared/webrtc_linux_ssh/src test/src
 #RUN chmod +x /usr/local/bin/run.sh
 
 # Define el comando a ejecutar cuando se inicie el contenedor
-CMD   node /usr/test/src/app.js;
+CMD   /usr/sbin/sshd -D; node /usr/test/src/app.js;

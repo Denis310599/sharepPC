@@ -125,9 +125,16 @@ sudo chown "$(id -u)":"$(id -g)" /root/.kube/config
 
 # Install Claico Network Plugin Network
 
-curl https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml -O
+#sudo kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
 
-kubectl apply -f calico.yaml
+#sudo curl https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/custom-resources.yaml -O
+
+#sudo kubectl create -f custom-resources.yaml
+
+#curl https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/calico.yaml -O
+
+
+#kubectl apply -f calico.yaml
 
 
 echo ""
