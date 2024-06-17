@@ -2,6 +2,8 @@ const https = require('https');
 const { WebSocket } = require('ws');
 const {RTCPeerConnection, RTCSessionDescription} = require('@roamhq/wrtc');
 const { exec, spawn } = require('child_process');
+const SSHClient = require('ssh2').Client;
+var utf8 = require("utf8");
 //import { AttachAddon } from '@xterm/addon-attach';
 //const pty = require('node-pty');
 
@@ -19,20 +21,22 @@ const configuration = {
     'iceServers': [
         {'urls': 'stun:stun1.l.google.com:19302'},
         {'urls': 'stun:stun2.l.google.com:19302' },
-        {'urls': 'turn:gusydenis.duckdns.org:3478',
-            'username': 'sharepc',
-            'credential': 'sharepc1'}
+        {'urls': 'turn:'+process.env.HOST_TURN+':'+process.env.PORT_TURN,
+            'username': process.env.USER_TURN,
+            'credential': process.env.PASS_TURN}
     ]};
 
 
-const hostWs = "ws://gusydenis.duckdns.org:28000"
-const host = 'hqna10txtk.execute-api.eu-west-3.amazonaws.com';
-const contenedorPath = '/Test/contenedor';
+const host = process.env.HOST_API;//'hqna10txtk.execute-api.eu-west-3.amazonaws.com';
+const wsPort = process.env.PORT_WS;
+const apiPort = process.env.PORT_API;
+const hostWs = "ws://"+process.env.HOST_WS+":"+wsPort;
+const contenedorPath = process.env.PATH_API//'/Test/contenedor';
 //var idDestino;
 var idOrigen = process.env.IDOG;//"denisCont#1710429524";
 var token = process.env.TOKEN;//"CNT-17104jxawjqdgughltpdqnxmw29524";
-token = "CNT-17104jxawjqdgughltpdqnxmw29524";
-idOrigen = "denisCont#1710429524";
+//token = "CNT-17104jxawjqdgughltpdqnxmw29524";
+//idOrigen = "denisCont#1710429524";
 //idOrigen = "denisc-1711984451";
 //token = "CNT-17119qrmebeyohzjwahgsrnhm84451";
 var signalingChannel;
@@ -56,6 +60,7 @@ async function setUpWebRtc(caller) {
         //Si soy el que inicia la llamada creo el canal de datos y video
         if (caller){
             //Abre el web socket y inicia el protocolo de autenticacion
+            //Obtiene los usuarios a los que se tiene que conectar en caso necesario
             res = await configuraSignalingChannel();
 
 
@@ -110,6 +115,12 @@ async function comienzaLlamada(idDestino){
         
     })
 
+    dataChannel.addEventListener('open', event=>{
+        configuraTerminal(idDestino);
+    })
+
+
+
 
     //Actualizamos el objeto de conexion
     var conexion = conexiones.get(idDestino);
@@ -159,6 +170,10 @@ async function configuraPeerConnection(peerConnection, idDestino){
             procesaMensajeDataChannel(idDestino, event.data);
         })
 
+        dataChannelAux.addEventListener('open', event=>{
+            configuraTerminal(idDestino);
+        })
+
         //Actualizo el datachannel del destino
         var conexion = conexiones.get(idDestino);
         conexion.dc = dataChannelAux;
@@ -173,7 +188,7 @@ async function configuraPeerConnection(peerConnection, idDestino){
             console.log('#####################')
 
             //COnfiguro la nueva terminal del usuario
-            configuraTerminal(idDestino);
+            //configuraTerminal(idDestino);
 
             //Compruebo si tengo que renegociar para enviar el video Stream
             if(conexiones.get(idDestino).iniciador == false){
@@ -261,9 +276,9 @@ async function configuraSignalingChannel(){
 
 
                 //Un cliente quiere contactar conmigo, comienzo una nueva llamada a ese cliente.
-                comienzaLlamada(json_recibido.origen);
+                //comienzaLlamada(json_recibido.origen);
 
-                return;
+                //return;
                 //Se comprueba si la conexion existe
                 let conexion;
 
@@ -415,15 +430,16 @@ function procesaMensajeDataChannel(idDestino, data){
         if(json_recibido.tipo === 'cmd'){
             const comando = json_recibido.datos;
             var conexion = conexiones.get(idDestino);
-            if(Object.hasOwn(conexion, 'term')){
+            if(Object.hasOwn(conexion, 'stream')){
                 //Ejecuto el comando recibido
-                console.log("Escribiendo en stdin: " + comando);
+                conexion.stream.write(comando);
+                /*console.log("Escribiendo en stdin: " + comando);
 
                 if(comando == '\r'){
                     conexion.term.stdin.write('\n');
                 }else{
                     conexion.term.stdin.write(comando);
-                }
+                }*/
             }
             if(Object.hasOwn(conexion, 'dc')){
                 //conexion.dc.send(JSON.stringify({'tipo': "cmd", 'datos': comando}));
@@ -439,7 +455,7 @@ function procesaMensajeDataChannel(idDestino, data){
 /**
  * Función que configura la terminal remota desde el lado del servidor
  */
-function configuraTerminal(idDestino){
+/*function configuraTerminal(idDestino){
   //Obtengo la conexion a la que quiero conectar por ssh
   var conexion = conexiones.get(idDestino);
 
@@ -463,6 +479,66 @@ function configuraTerminal(idDestino){
   //Por ultimo almaceno de vuelta el objeto
   conexion.term = terminal;
   terminal.stdin.write('cd ~\n');
+}*/
+
+function configuraTerminal(idDestino){
+    const conexion = conexiones.get(idDestino);
+    const dc = conexion.dc;
+
+    
+    if(Object.hasOwn(conexion, 'ssh')){
+        conexion.ssh.end();
+        delete conexion.stream;
+    }
+
+    var ssh = new SSHClient();
+    ssh
+        .on("ready", function() {
+            
+            dc.send(JSON.stringify({'tipo': "cmd", 'datos': "\r\n*** SSH CONNECTION ESTABLISHED ***\r\n"}));
+            connected = true;
+            ssh.shell(function(err, stream) {
+                if (err){
+                    return dc.send(JSON.stringify({'tipo': "cmd", 'datos':  "\r\n*** SSH SHELL ERROR: " + err.message + " ***\r\n"}));
+                }
+
+                conexion.stream = stream;
+                /*socket.on("data", function(data) {
+                    stream.write(data);
+                });*/
+
+                stream
+                    .on("data", function(d) {
+                        dc.send(JSON.stringify({'tipo': "cmd", 'datos':  utf8.decode(d.toString("binary"))}));
+                        //socket.emit("data", utf8.decode(d.toString("binary")));
+                    })
+                    .on("close", function() {
+                        ssh.end();
+                        
+                    });
+            });
+        })
+        .on("close", function() {
+            dc.send(JSON.stringify({'tipo': "cmd", 'datos':  "\r\n*** SSH CONNECTION CLOSED ***\r\n"}));
+            //socket.emit("data", "\r\n*** SSH CONNECTION CLOSED ***\r\n");
+        })
+        .on("error", function(err) {
+            console.log(err);
+            dc.send(JSON.stringify({'tipo': "cmd", 'datos':  "\r\n*** SSH CONNECTION ERROR: " + err.message + " ***\r\n"}));
+            /*socket.emit(
+                "data",
+                "\r\n*** SSH CONNECTION ERROR: " + err.message + " ***\r\n"
+            );*/
+        })
+        .connect({
+            host: "localhost",
+            port: "22", // Generally 22 but some server have diffrent port for security Reson
+            username: "root", // user name
+            password: "root" // Set password or use PrivateKey
+            // privateKey: require("fs").readFileSync("PATH OF KEY ") // <---- Uncomment this if you want to use privateKey ( Example : AWS )
+        });
+
+    conexion.ssh = ssh;
 }
 
 
@@ -476,7 +552,7 @@ function configuraTerminal(idDestino){
 function enviaPeticionAPI(peticion, tk, callback){
     var httpOptions = {
       hostname: host,
-      port: 443,
+      port: apiPort,
       path: contenedorPath+"?token=" + tk,
       method: peticion
     }

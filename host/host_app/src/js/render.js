@@ -15,15 +15,16 @@ const configuration = {
     'iceServers': [
         {'urls': 'stun:stun1.l.google.com:19302'},
         {'urls': 'stun:stun2.l.google.com:19302' },
-        {'urls': 'turn:gusydenis.duckdns.org:3478',
-            'username': 'sharepc',
-            'credential': 'sharepc1'}
+        {'urls': 'turn:'+process.env.HOST_TURN+':'+process.env.PORT_TURN,
+            'username': process.env.USER_TURN,
+            'credential': process.env.PASS_TURN}
     ]};
 
-
-const hostWs = "ws://gusydenis.duckdns.org:28000"
-const host = 'hqna10txtk.execute-api.eu-west-3.amazonaws.com';
-const contenedorPath = '/Test/contenedor';
+const host = process.env.HOST_API;//'hqna10txtk.execute-api.eu-west-3.amazonaws.com';
+const wsPort = process.env.PORT_WS;
+const apiPort = process.env.PORT_API;
+const hostWs = "ws://"+process.env.HOST_WS+":"+wsPort;
+const contenedorPath = process.env.PATH_API//'/Test/contenedor';
 //var idDestino;
 var idOrigen = process.env.IDOG;//"denisCont#1710429524";
 var token = process.env.TOKEN;//"CNT-17104jxawjqdgughltpdqnxmw29524";
@@ -460,7 +461,7 @@ function procesaMensajeDataChannel(data){
 function enviaPeticionAPI(peticion, tk, callback){
     var httpOptions = {
       hostname: host,
-      port: 443,
+      port: apiPort,
       path: contenedorPath+"?token=" + tk,
       method: peticion
     }

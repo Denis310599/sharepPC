@@ -2,19 +2,21 @@ const { WebSocketServer, WebSocket } = require('ws');
 const https = require('https')
 
 //Variables globales
-host = 'hqna10txtk.execute-api.eu-west-3.amazonaws.com';
-contenedorPath = '/Test/contenedor';
+const host = process.env.HOST_API//'hqna10txtk.execute-api.eu-west-3.amazonaws.com';
+const contenedorPath = process.env.PATH_API//'/Test/ws';
+const port = process.env.PORT_API
+const port_ws = process.env.PORT_WS;
 
 const MAX_KEEPALIVE = 5;
 const KEEPALIVE_INTERVAL = 60;//s
 
-var mapaSockets = new Map();
+var mapaSockets = new Map(); // idOrigen -> { 'ws': ws, 'send': [], 'ka': 5}
 
 /*********************************************************************************************
  *            Funcionamiento de inicio
  * *******************************************************************************************
  */
-const ws = new WebSocketServer({port:28000});
+const ws = new WebSocketServer({port:port_ws});
 console.log('escuchando en el puerto 28000')
 
 //Establezco el intervalo de keepalives
@@ -237,7 +239,7 @@ function procesaMensajeNormal(jsonRecibido, ws){
 function enviaPeticionAPI(peticion, data, callback){
   var httpOptions = {
     hostname: host,
-    port: 443,
+    port: port,
     path: contenedorPath,
     method: peticion,
     headers: {

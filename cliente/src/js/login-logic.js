@@ -72,8 +72,7 @@ function iniciarSesion(){
 
   muestraDialogCargando("Iniciando sesión");
   //Inicia sesion a traves de la API
-  enviaPeticionAPI('POST', "login", {'action': "login",
-                                      'user': usuario.trim(),
+  enviaPeticionAPI('POST', "/session", {'user': usuario.trim(),
                                       'contra': contra},
   (data, error)=>{
     hideDialogCargando();
@@ -124,7 +123,7 @@ function iniciarSesion(){
  * @param {Object} args argumentos de la solicitud 
  * @param {*} callback Toma como argumentos la respuesta de la API y si se ha producido un error
  */
-function enviaPeticionAPI(peticion, tk, args, callback){
+function enviaPeticionAPI(peticion, ruta, tk, args, callback){
   var httpOptions = {
     hostname: host_API,
     port: 443,
@@ -138,7 +137,7 @@ function enviaPeticionAPI(peticion, tk, args, callback){
   //Peticion GET
   if(peticion == 'GET'){
     
-    let path_final = "/Test/contenedor?token="+tk;
+    let path_final = "/Test"+ruta + "?token="+tk;
 
     Object.keys(args).forEach(item =>{
       path_final += `&${item.key}=${item.value}`;
@@ -148,7 +147,7 @@ function enviaPeticionAPI(peticion, tk, args, callback){
 
   //Peticion POST
   }else if(peticion == 'POST'){
-    httpOptions.path = "/Test/login";
+    httpOptions.path = "/Test"+ruta;
     
     const datosAux = args;
     if(tk != "login"){
@@ -233,8 +232,7 @@ function crearCuentaPulsado(){
 
   muestraDialogCargando("Creando cuenta");
   //Procedemos a crear la cuenta
-  enviaPeticionAPI('POST', "login", {'action': "crea",
-                                      'user': usuario,
+  enviaPeticionAPI('POST', "/account", {'user': usuario,
                                       'contra': contra,
                                       'correo': correo},
   (data, error) =>{
@@ -390,7 +388,7 @@ ipcRenderer.on('return-token', (e, data)=>{
     const token = data.get('token');
 
     //Compruebo que el token siga siendo valido
-    enviaPeticionAPI('GET', token, {}, (data2, error)=>{
+    enviaPeticionAPI('GET', "/container",token, {}, (data2, error)=>{
       enableButtons();
       hideDialogCargando();
       let error_aux = false;

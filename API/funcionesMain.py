@@ -62,8 +62,8 @@ def compruebaToken(token, conn):
 
 def createDeployment(nombreContenedor, token, imagen, conexion, cpus='2.0', memory='4096Mi', update=True):
     """Función que crea un nuevo deployment comunicandose con la API de K8S"""
-    token_api = os.environ['TOKEN_K8S']
-    url_api = os.environ['HOST_K8S'] + "apps/v1/namespaces/default/deployments"
+    #token_api = os.environ['TOKEN_K8S']
+    #url_api = os.environ['HOST_K8S'] + "apps/v1/namespaces/default/deployments"
     
     nombreImagen = "denis31599/tfm_test:" + imagen
     
@@ -88,7 +88,15 @@ def createDeployment(nombreContenedor, token, imagen, conexion, cpus='2.0', memo
                                                                                                                                                                         #limits={"memory": memory,
                                                                                                                                                                                  #"cpu": cpus}),
                                                                                                                                 env=[client.V1EnvVar(name="IDOG", value=nombreContenedor),
-                                                                                                                                     client.V1EnvVar(name="TOKEN", value=token)],
+                                                                                                                                     client.V1EnvVar(name="TOKEN", value=token),
+                                                                                                                                     client.V1EnvVar(name="HOST_API", value=os.environ['HOST_API']),
+                                                                                                                                     client.V1EnvVar(name="PORT_API", value=os.environ['PORT_API']),
+                                                                                                                                     client.V1EnvVar(name="HOST_WS", value=os.environ['HOST_WS']),
+                                                                                                                                     client.V1EnvVar(name="PORT_WS", value=os.environ['PORT_WS']),
+                                                                                                                                     client.V1EnvVar(name="HOST_TURN", value=os.environ['HOST_TURN']),
+                                                                                                                                     client.V1EnvVar(name="PORT_TURN", value=os.environ['PORT_TURN']),
+                                                                                                                                     client.V1EnvVar(name="USER_TURN", value=os.environ['USER_TURN']),
+                                                                                                                                     client.V1EnvVar(name="PASS_TURN", value=os.environ['PASS_TURN'])],
                                                                                                                                 image_pull_policy='Always',
                                                                                                                                 security_context=client.V1SecurityContext(capabilities=client.V1Capabilities(add=['sys_chroot']),
                                                                                                                                                                           run_as_user=0))],

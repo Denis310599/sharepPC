@@ -67,7 +67,7 @@ let memoria_mv;
  * @param {Object} args argumentos de la solicitud 
  * @param {*} callback Toma como argumentos la respuesta de la API y si se ha producido un error
  */
-function enviaPeticionAPI(peticion, tk, args, callback){
+function enviaPeticionAPI(peticion, ruta, tk, args, callback){
   var httpOptions = {
     hostname: host_API,
     port: 443,
@@ -82,7 +82,7 @@ function enviaPeticionAPI(peticion, tk, args, callback){
   //Peticion GET
   if(peticion == 'GET'){
     
-    let path_final = "/Test/contenedor?token="+tk;
+    let path_final = "/Test"+ruta+"?token="+tk;
 
     Object.keys(args).forEach(item =>{
       path_final += `&${item.key}=${item.value}`;
@@ -91,8 +91,8 @@ function enviaPeticionAPI(peticion, tk, args, callback){
     httpOptions.path = path_final;
 
   //Peticion POST
-  }else if(peticion == 'POST'){
-    httpOptions.path = "/Test/contenedor";
+  }else{
+    httpOptions.path = "/Test"+ruta;
     
     const datosAux = args;
     datosAux.token = tk;
@@ -134,7 +134,7 @@ function enviaPeticionAPI(peticion, tk, args, callback){
  * @param {String} tk Token de autenticacion de la API
  */
 function consultaContenedoresUsuario(tk){
-  enviaPeticionAPI('GET', session_token, {}, (data, error) =>{
+  enviaPeticionAPI('GET', "/container", session_token, {}, (data, error) =>{
     try{
       //Gestiono la respuesta de la API
       if(!error){
@@ -302,13 +302,12 @@ function botonCrearPulsado(){
 
   muestraDialogCargando("Creando contenedor");
   //Envio la peticion al servidor para crear el contenedor
-  enviaPeticionAPI('POST', session_token, {'action': "createContainer",
-                                   'cpus': cpus,
-                                   'mem_s': memSize,
-                                   'mem_t': memType,
-                                   'nombre': nombreContenedor,
-                                   'conexion': tipoConexion,
-                                   'imagen': "host"},
+  enviaPeticionAPI('POST', "/container", session_token, {'cpus': cpus,
+                                                        'mem_s': memSize,
+                                                        'mem_t': memType,
+                                                        'nombre': nombreContenedor,
+                                                        'conexion': tipoConexion,
+                                                        'imagen': "host"},
   (data, error)=>{
     hideDialogCargando();
     try{
@@ -458,8 +457,7 @@ function eliminarContenedor(){
 
   //Llamo a la API para eliminar el contenedor.
   console.log("Llamando a la API para eliminar el contenedor: " + idContenedor);
-  enviaPeticionAPI('POST', session_token, {'action': "deleteContainer",
-                                   'id': idContenedor},
+  enviaPeticionAPI('DELETE', "/container", session_token, {'id': idContenedor},
   (data, error)=>{
     hideDialogCargando();
     try{
@@ -546,14 +544,13 @@ function botonGuardarEdicionPulsado(){
 
   muestraDialogCargando("Aplicando los cambios al contenedor");
   //Enviamos la peticion a la API si fuese necesario
-  enviaPeticionAPI('POST', session_token, {'action': "updateContainer",
-                                            'cpus': cpus.value,
-                                            'mem_s': mem_s.value,
-                                            'mem_t': memTypeAux,
-                                            'nombre': nombre.value,
-                                            'id': contenedor.id,
-                                            'imagen': "host",
-                                            'conexion': tipoConexion},
+  enviaPeticionAPI('PATCH', "/container", session_token, {'cpus': cpus.value,
+                                                          'mem_s': mem_s.value,
+                                                          'mem_t': memTypeAux,
+                                                          'nombre': nombre.value,
+                                                          'id': contenedor.id,
+                                                          'imagen': "host",
+                                                          'conexion': tipoConexion},
   (data, error)=>{
     hideDialogCargando();
     try{
@@ -730,7 +727,7 @@ function botonCerrarSesionPulsado(){
   muestraMensajeAlerta("Cerrar Sesión", "Está a punto de cerrar la sesión. ¿Desea continuar?", true, true, (e)=>{
     //Si decide salir, envio la peticion a la API
     muestraDialogCargando("Cerrando sesión");
-    enviaPeticionAPI('POST', session_token, {'action': "logout"},
+    enviaPeticionAPI('DELETE', "/session", session_token, {},
       (data, error)=>{
         hideDialogCargando();
         //Me da igual si hay error o no, salgo igualmente
@@ -1198,7 +1195,7 @@ function arrancaMv(url){
       muestraMensajeAlerta("Error al arrancar la MV", "No se ha encontrado el identificador de la maquina virtual, por lo que es imposible asignar una IP", false, true);
     }
     //Consulto la API por si ha cambiado
-    enviaPeticionAPI("POST", session_token, {'action': "getKubejoin" , 'ts': ts_almacenada}, 
+    enviaPeticionAPI("GET", "/kubejoin", session_token, {'ts': ts_almacenada}, 
     (dataAPI, errorAPI)=>{
       try{
         if(errorAPI){
@@ -1296,7 +1293,7 @@ function ejecutaVagrantUp(url, comando, mvid){
   //Funcion que asigna la IP a la maquina virtual
   const funcionActualizaIp = ()=>{
     //Hago la consulta a la API
-    enviaPeticionAPI('POST', session_token, {'mv_id': mvid, 'action': 'getMvIp'},
+    enviaPeticionAPI('GET', "/mvs", session_token, {'mv_id': mvid},
       (dataAPI, errorAPI) => {
         try{
           if(errorAPI){
@@ -1673,7 +1670,7 @@ function eliminaIpMv(url){
     if(mv_id == null){
      return
     }
-    enviaPeticionAPI('POST', session_token, {'mv_id': mv_id, 'action': 'rmMvIp'}, (data, err)=>{console.log("Respuesta de la API. Error: " + err + ". Datos: " + data)});
+    enviaPeticionAPI('POST', "/mvs", session_token, {'mv_id': mv_id}, (data, err)=>{console.log("Respuesta de la API. Error: " + err + ". Datos: " + data)});
   });
 }
 /***********************************

@@ -100,7 +100,7 @@ def kubejoin():
 #                          vms
 ##############################################################
 @app.route("/Test/vms", methods=['GET', 'DELETE'])
-def kubejoin():
+def vms():
     #Obtengo el body
     body = request.json
 
