@@ -1,0 +1,586 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "sharePC",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "servers": [
+    {
+      "url": "http://gusydenis.duckdns.org"
+    }
+  ],
+  "paths": {
+    "/Test/session": {
+      "post": {
+        "summary": "login",
+        "description": "login",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contra": {
+                    "type": "string",
+                    "example": "1234"
+                  },
+                  "user": {
+                    "type": "string",
+                    "example": "test"
+                  }
+                }
+              },
+              "examples": {
+                "login": {
+                  "value": {
+                    "contra": "1234",
+                    "user": "test"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "summary": "logout",
+        "description": "logout",
+        "operationId": "logout",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "Tk-17184xxocxfcqjtzkhyiefphd54558"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "example": "Tk-17184xxocxfcqjtzkhyiefphd54558"
+                  }
+                }
+              },
+              "examples": {
+                "logout": {
+                  "value": {
+                    "token": "Tk-17184xxocxfcqjtzkhyiefphd54558"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/Test/account": {
+      "post": {
+        "summary": "create",
+        "description": "create",
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "contra": {
+                    "type": "string",
+                    "example": "1234"
+                  },
+                  "correo": {
+                    "type": "string",
+                    "example": "test@gmail.com"
+                  },
+                  "user": {
+                    "type": "string",
+                    "example": "test"
+                  }
+                }
+              },
+              "examples": {
+                "create": {
+                  "value": {
+                    "contra": "1234",
+                    "correo": "test@gmail.com",
+                    "user": "test"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "summary": "elimina",
+        "description": "elimina",
+        "operationId": "elimina",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "Tk-17104pqglamvatozfubnfnymh19827"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "example": "Tk-17184scxihculdnrhrokejzdo54900"
+                  }
+                }
+              },
+              "examples": {
+                "elimina": {
+                  "value": {
+                    "token": "Tk-17184scxihculdnrhrokejzdo54900"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/Test/container": {
+      "get": {
+        "summary": "getContainers",
+        "description": "getContainers",
+        "operationId": "getcontainers",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "Tk-17104ljcprrgwfrtonajpqdls20242"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "denisCont%231710429524"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "put": {
+        "summary": "containerReady",
+        "description": "containerReady",
+        "operationId": "containerready",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "CNT-17104jxawjqdgughltpdqnxmw29524"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "summary": "createContainer",
+        "description": "createContainer",
+        "operationId": "createcontainer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cpus": {
+                    "type": "number",
+                    "example": 4
+                  },
+                  "mem_s": {
+                    "type": "string",
+                    "example": "4096"
+                  },
+                  "mem_t": {
+                    "type": "number",
+                    "example": 0
+                  },
+                  "nombre": {
+                    "type": "string",
+                    "example": "asda"
+                  },
+                  "token": {
+                    "type": "string",
+                    "example": "Tk-17104ljcprrgwfrtonajpqdls20242"
+                  }
+                }
+              },
+              "examples": {
+                "createContainer": {
+                  "value": {
+                    "cpus": 4,
+                    "mem_s": "4096",
+                    "mem_t": 0,
+                    "nombre": "asda",
+                    "token": "Tk-17104ljcprrgwfrtonajpqdls20242"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "summary": "deleteContainer",
+        "description": "deleteContainer",
+        "operationId": "deletecontainer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "example": "denisc-1711984451"
+                  },
+                  "token": {
+                    "type": "string",
+                    "example": "Tk-17104ljcprrgwfrtonajpqdls20242"
+                  }
+                }
+              },
+              "examples": {
+                "deleteContainer": {
+                  "value": {
+                    "id": "denisc-1711984451",
+                    "token": "Tk-17104ljcprrgwfrtonajpqdls20242"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/Test/contenedor": {
+      "patch": {
+        "summary": "updateContainer",
+        "description": "updateContainer",
+        "operationId": "updatecontainer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cpus": {
+                    "type": "number",
+                    "example": 4
+                  },
+                  "mem_s": {
+                    "type": "string",
+                    "example": "4096"
+                  },
+                  "mem_t": {
+                    "type": "number",
+                    "example": 0
+                  },
+                  "nombre": {
+                    "type": "string",
+                    "example": "asda"
+                  },
+                  "token": {
+                    "type": "string",
+                    "example": "Tk-17104ljcprrgwfrtonajpqdls20242"
+                  }
+                }
+              },
+              "examples": {
+                "updateContainer": {
+                  "value": {
+                    "cpus": 4,
+                    "mem_s": "4096",
+                    "mem_t": 0,
+                    "nombre": "asda",
+                    "token": "Tk-17104ljcprrgwfrtonajpqdls20242"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/Test/kubejoin": {
+      "get": {
+        "summary": "getKubejoin",
+        "description": "getKubejoin",
+        "operationId": "getkubejoin",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "abc"
+            }
+          },
+          {
+            "name": "ts",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "1"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "post": {
+        "summary": "setKubejoin",
+        "description": "setKubejoin",
+        "operationId": "setkubejoin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "comando": {
+                    "type": "string",
+                    "example": "comando_test"
+                  },
+                  "token": {
+                    "type": "string",
+                    "example": "Tk-17137gbpaxswfyyifdcddjwpo99354"
+                  }
+                }
+              },
+              "examples": {
+                "setKubejoin": {
+                  "value": {
+                    "comando": "comando_test",
+                    "token": "Tk-17137gbpaxswfyyifdcddjwpo99354"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/Test/ws": {
+      "post": {
+        "summary": "authWS Copy",
+        "description": "authWS Copy",
+        "operationId": "authwsCopy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "example": "createContainer"
+                  },
+                  "token": {
+                    "type": "string",
+                    "example": "Tk-17104ljcprrgwfrtonajpqdls20242"
+                  }
+                }
+              },
+              "examples": {
+                "authWS Copy": {
+                  "value": {
+                    "action": "createContainer",
+                    "token": "Tk-17104ljcprrgwfrtonajpqdls20242"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/Test/vms": {
+      "get": {
+        "summary": "getMvIp",
+        "description": "getMvIp",
+        "operationId": "getmvip",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "asd"
+            }
+          },
+          {
+            "name": "mv_id",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": "asd"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "example": "getKubejoin"
+                  },
+                  "token": {
+                    "type": "string",
+                    "example": "Tk-17104ljcprrgwfrtonajpqdls20242"
+                  },
+                  "ts": {
+                    "type": "string",
+                    "example": "1713801209"
+                  }
+                }
+              },
+              "examples": {
+                "getMvIp": {
+                  "value": {
+                    "action": "getKubejoin",
+                    "token": "Tk-17104ljcprrgwfrtonajpqdls20242",
+                    "ts": "1713801209"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "summary": "rmMvIp",
+        "description": "rmMvIp",
+        "operationId": "rmmvip",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "example": "getKubejoin"
+                  },
+                  "token": {
+                    "type": "string",
+                    "example": "Tk-17104ljcprrgwfrtonajpqdls20242"
+                  },
+                  "ts": {
+                    "type": "string",
+                    "example": "1713801209"
+                  }
+                }
+              },
+              "examples": {
+                "rmMvIp": {
+                  "value": {
+                    "action": "getKubejoin",
+                    "token": "Tk-17104ljcprrgwfrtonajpqdls20242",
+                    "ts": "1713801209"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    }
+  },
+  "tags": []
+}

@@ -213,7 +213,7 @@ body {
 
 /*Logotipo*/
 .logo{
-  content: url(../../assets/logo.png);
+  content: url(../../assets/icons2/logo@4.png);
 
   height: fit-content;
   width: fit-content;
@@ -1229,6 +1229,7 @@ input[type="number"]::-webkit-inner-spin-button {
   left: 0;
   top: 0;
   background-color: transparent;
+  
 
 }
 
@@ -1244,7 +1245,7 @@ input[type="number"]::-webkit-inner-spin-button {
   overflow: visible;
 
   background-color: transparent;
-  border-radius: 0;
+
 
   max-height: 80vh;
 
@@ -1256,6 +1257,7 @@ input[type="number"]::-webkit-inner-spin-button {
   height: 100%;
   perspective: 1000px;
   
+  
 }
 
 .flip-card-inner {
@@ -1265,6 +1267,8 @@ input[type="number"]::-webkit-inner-spin-button {
   text-align: center;
   transition: transform 0.6s;
   transform-style: preserve-3d;
+
+  
 }
 
 .flip-card.crear .flip-card-inner {
@@ -1282,11 +1286,23 @@ input[type="number"]::-webkit-inner-spin-button {
 .flip-card-front {
   background-color: #bbb;
   color: black;
+
+  /* From https://css.glass */
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(3.4px);
+  -webkit-backdrop-filter: blur(3.4px);
 }
 
 .flip-card-back {
   color: white;
   transform: rotateY(180deg);
+
+  /* From https://css.glass */
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(3.4px);
+  -webkit-backdrop-filter: blur(3.4px);
 }
 
 
@@ -1328,18 +1344,18 @@ input[type="number"]::-webkit-inner-spin-button {
   width: fit-content;
 
   margin: auto;
-  margin-top: 20px;
+  margin-top: 0px;
 
 }
 
 .pantalla-login .logo{
-  height: 100px;
+  height: 150px;
   width: auto;
 
   right: 0;
   left: 0;
   margin: auto;
-  margin-top: 30px;
+  margin-top: 10px;
   
 }
 
@@ -1462,7 +1478,7 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .pantalla-crea .logo{
-  height: 80px;
+  height: 150px;
   width: auto;
 
   right: 0;
@@ -1505,4 +1521,17 @@ input[type="number"]::-webkit-inner-spin-button {
   100% {
     transform: rotate(360deg);
   }
+}
+
+
+#myVideo{
+  object-fit: cover;
+  height: 100%;
+  width: 100%;
+}
+
+
+.xterm .xterm-viewport {
+  /* see : https://github.com/xtermjs/xterm.js/issues/3564#issuecomment-1004417440 */
+  width: initial !important;
 }

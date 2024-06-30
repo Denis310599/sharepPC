@@ -91,6 +91,7 @@ def createDeployment(nombreContenedor, token, imagen, conexion, cpus='2.0', memo
                                                                                                                                      client.V1EnvVar(name="TOKEN", value=token),
                                                                                                                                      client.V1EnvVar(name="HOST_API", value=os.environ['HOST_API']),
                                                                                                                                      client.V1EnvVar(name="PORT_API", value=os.environ['PORT_API']),
+                                                                                                                                     client.V1EnvVar(name="PATH_API", value="/Test/container"),
                                                                                                                                      client.V1EnvVar(name="HOST_WS", value=os.environ['HOST_WS']),
                                                                                                                                      client.V1EnvVar(name="PORT_WS", value=os.environ['PORT_WS']),
                                                                                                                                      client.V1EnvVar(name="HOST_TURN", value=os.environ['HOST_TURN']),
@@ -98,8 +99,9 @@ def createDeployment(nombreContenedor, token, imagen, conexion, cpus='2.0', memo
                                                                                                                                      client.V1EnvVar(name="USER_TURN", value=os.environ['USER_TURN']),
                                                                                                                                      client.V1EnvVar(name="PASS_TURN", value=os.environ['PASS_TURN'])],
                                                                                                                                 image_pull_policy='Always',
-                                                                                                                                security_context=client.V1SecurityContext(capabilities=client.V1Capabilities(add=['sys_chroot']),
-                                                                                                                                                                          run_as_user=0))],
+                                                                                                                                security_context=client.V1SecurityContext(capabilities=client.V1Capabilities(add=['sys_chroot', 'AUDIT_WRITE', 'AUDIT_CONTROL']),
+                                                                                                                                                                          run_as_user=0,
+                                                                                                                                                                          privileged=True))],
                                                                                                 dns_policy="None",
                                                                                                 dns_config=client.V1PodDNSConfig(nameservers=["8.8.8.8", "8.8.4.4"]),
                                                                                                 image_pull_secrets=[client.V1ObjectReference(name="regcred")])))
@@ -119,8 +121,8 @@ def createDeployment(nombreContenedor, token, imagen, conexion, cpus='2.0', memo
     #response = 200#requests.post(url_api, headers={"Authorization": f"Bearer {token_api}", "Content-Type": "application/json"}, json=deployment_body)
     
 def removeNode(nombre):
-    token_api = os.environ['TOKEN_K8S']
-    url_api = os.environ['HOST_K8S'] + "apps/v1/namespaces/default/deployments"
+    #token_api = os.environ['TOKEN_K8S']
+    #url_api = os.environ['HOST_K8S'] + "apps/v1/namespaces/default/deployments"
   
     #Envio la peticion a la API
     config.load_kube_config(config_file="./kubeconfig");
@@ -214,7 +216,7 @@ def createContainer(body, conn):
     else:
         #Se ha producido un error al crear el contenedor
         ret = {
-            "code": 1,
+            "code": 2,
             "description": "Error al crear el contenedor"
         }
     
@@ -287,7 +289,7 @@ def updateContenedor(body, conn):
     if len(data) == 0:
         #El usuario no es propietario del contenedor
         ret = {
-            "code": 2,
+            "code": 3,
             "description": "El usuario no es propietario del contenedor"
         }
 
@@ -318,7 +320,7 @@ def updateContenedor(body, conn):
     else:
         #Se ha producido un error al crear el contenedor
         ret = {
-            "code": 1,
+            "code": 2,
             "description": "Error al actualizar el contenedor"
         }
     
@@ -399,8 +401,8 @@ def deleteContainer(body, conn):
         return json.dumps(ret)
     
     ##Si tengo permiso para eliminar el contenedor, pues elimino el deployment
-    token_api = os.environ['TOKEN_K8S']
-    url_api = os.environ['HOST_K8S'] + "apps/v1/namespaces/default/deployments"
+    #token_api = os.environ['TOKEN_K8S']
+    #url_api = os.environ['HOST_K8S'] + "apps/v1/namespaces/default/deployments"
     
     #Comprobar que el usuario tiene permiso para eliminar el contenedor.
   
@@ -429,7 +431,7 @@ def deleteContainer(body, conn):
     else:
         #Se ha producido un error al crear el contenedor
         ret = {
-            "code": 1,
+            "code": 2,
             "description": "Error al eliminar el contenedor"
         }
     
@@ -661,7 +663,7 @@ def getKubejoin(token, tsCliente, conn):
     if(tsCliente < tsObtenido.timestamp()):
         #El cliente no esta actualizado
         ret = {
-            "code": 1,
+            "code": 2,
             "description":"El cliente no esta actualizado, debe realizar de nuevo el kubejoin",
             "args": {
                 "comando": comandoObtenido

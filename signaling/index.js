@@ -1,5 +1,6 @@
 const { WebSocketServer, WebSocket } = require('ws');
 const https = require('https')
+const http = require('http')
 
 //Variables globales
 const host = process.env.HOST_API//'hqna10txtk.execute-api.eu-west-3.amazonaws.com';
@@ -17,7 +18,7 @@ var mapaSockets = new Map(); // idOrigen -> { 'ws': ws, 'send': [], 'ka': 5}
  * *******************************************************************************************
  */
 const ws = new WebSocketServer({port:port_ws});
-console.log('escuchando en el puerto 28000')
+console.log('escuchando en el puerto' + port_ws)
 
 //Establezco el intervalo de keepalives
 setInterval(enviaKeepAlive, KEEPALIVE_INTERVAL*1000);
@@ -26,8 +27,9 @@ setInterval(enviaKeepAlive, KEEPALIVE_INTERVAL*1000);
  *            Eventos
  * *******************************************************************************************
  */
-ws.on('connection', async ws2=>{
-  
+ws.on('open', async ws2=>{
+  console.log('Intento de conexion recibido')
+  console.log(ws2);
   ws2.on('message', async data=>{
     console.log("Mensaje recibido");
     //Compruebo el mensaje que recibo
@@ -46,6 +48,7 @@ ws.on('connection', async ws2=>{
         case 2:
           //Mensaje desconexion
           procesaMensajeDesconexion(jsonRecibido, ws2);
+          break;
         case 3:
           //Mensaje keepalive
           procesaRecepcionKeepalive(jsonRecibido);
@@ -247,7 +250,7 @@ function enviaPeticionAPI(peticion, data, callback){
           'Content-Length': data.length
         }
   }
-  const req = https.request(httpOptions, (res) => {
+  const req = http.request(httpOptions, (res) => {
     res.on('data', d =>{
       console.log("Respuesta de la API recibida");
       callback(d, false);

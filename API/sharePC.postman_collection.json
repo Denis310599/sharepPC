@@ -1,0 +1,498 @@
+{
+	"info": {
+		"_postman_id": "1335853b-9561-45a4-8faf-0563dc39925f",
+		"name": "sharePC",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "14728171"
+	},
+	"item": [
+		{
+			"name": "login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"user\": \"test\",\r\n    \"contra\": \"1234\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/session",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"session"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "logout",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"token\": \"Tk-17184xxocxfcqjtzkhyiefphd54558\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/session",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"session"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "Tk-17184xxocxfcqjtzkhyiefphd54558",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"user\": \"test\",\r\n    \"contra\": \"1234\",\r\n    \"correo\": \"test@gmail.com\"\r\n}\r\n\r\n\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/account",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"account"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "elimina",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"token\": \"Tk-17184scxihculdnrhrokejzdo54900\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/account",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"account"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "Tk-17104pqglamvatozfubnfnymh19827",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "createContainer",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"token\": \"Tk-17104ljcprrgwfrtonajpqdls20242\",\r\n    \"cpus\": 4,\r\n    \"mem_s\": \"4096\",\r\n    \"mem_t\": 0,\r\n    \"nombre\": \"asda\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/container",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"container"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "updateContainer",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"token\": \"Tk-17104ljcprrgwfrtonajpqdls20242\",\r\n    \"cpus\": 4,\r\n    \"mem_s\": \"4096\",\r\n    \"mem_t\": 0,\r\n    \"nombre\": \"asda\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/contenedor",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"contenedor"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "deleteContainer",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"token\": \"Tk-17104ljcprrgwfrtonajpqdls20242\",\r\n    \"id\": \"denisc-1711984451\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/container",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"container"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getContainers",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/container?token=Tk-17104ljcprrgwfrtonajpqdls20242",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"container"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "Tk-17104ljcprrgwfrtonajpqdls20242"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getContainerStatus",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/container?token=Tk-17104ljcprrgwfrtonajpqdls20242&id=denisCont%231710429524",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"container"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "Tk-17104ljcprrgwfrtonajpqdls20242"
+						},
+						{
+							"key": "id",
+							"value": "denisCont%231710429524"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "containerReady",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/container?token=CNT-17104jxawjqdgughltpdqnxmw29524",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"container"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "CNT-17104jxawjqdgughltpdqnxmw29524"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "setKubejoin",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"token\": \"Tk-17137gbpaxswfyyifdcddjwpo99354\",\r\n    \"comando\": \"comando_test\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/kubejoin",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"kubejoin"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getKubejoin",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/kubejoin?token=abc&ts=1",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"kubejoin"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "abc"
+						},
+						{
+							"key": "ts",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "authWS Copy",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"action\": \"createContainer\",\r\n    \"token\": \"Tk-17104ljcprrgwfrtonajpqdls20242\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/ws",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"ws"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getMvIp",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"action\": \"getKubejoin\",\r\n    \"token\": \"Tk-17104ljcprrgwfrtonajpqdls20242\",\r\n    \"ts\": \"1713801209\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/vms?token=asd&mv_id=asd",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"vms"
+					],
+					"query": [
+						{
+							"key": "token",
+							"value": "asd"
+						},
+						{
+							"key": "mv_id",
+							"value": "asd"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "rmMvIp",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"action\": \"getKubejoin\",\r\n    \"token\": \"Tk-17104ljcprrgwfrtonajpqdls20242\",\r\n    \"ts\": \"1713801209\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://gusydenis.duckdns.org:91/Test/vms",
+					"protocol": "http",
+					"host": [
+						"gusydenis",
+						"duckdns",
+						"org"
+					],
+					"port": "91",
+					"path": [
+						"Test",
+						"vms"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -6,7 +6,7 @@ def connect():
         #database = os.environ['DB_NAME'],
         #user = os.environ['USER_NAME'],
         #password = os.environ['PASSWORD'])
-        host = "gusydenis.duckdns.org",
+        host = "172.17.0.1",
         database = "sharepc",
         user = "batman",
         password = "soybruce")

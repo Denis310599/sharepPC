@@ -17,6 +17,7 @@ const configuration = {
 
 let host_WS;
 let host_API;
+let port_API;
 //var idDestino;
 var id_origen;
 var token;

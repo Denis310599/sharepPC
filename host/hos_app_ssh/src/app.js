@@ -1,4 +1,5 @@
 const https = require('https');
+const http = require('http')
 const { WebSocket } = require('ws');
 const {RTCPeerConnection, RTCSessionDescription} = require('@roamhq/wrtc');
 const { exec, spawn } = require('child_process');
@@ -533,8 +534,8 @@ function configuraTerminal(idDestino){
         .connect({
             host: "localhost",
             port: "22", // Generally 22 but some server have diffrent port for security Reson
-            username: "root", // user name
-            password: "root" // Set password or use PrivateKey
+            username: "share", // user name
+            password: "share" // Set password or use PrivateKey
             // privateKey: require("fs").readFileSync("PATH OF KEY ") // <---- Uncomment this if you want to use privateKey ( Example : AWS )
         });
 
@@ -556,7 +557,7 @@ function enviaPeticionAPI(peticion, tk, callback){
       path: contenedorPath+"?token=" + tk,
       method: peticion
     }
-    const req = https.request(httpOptions, (res) => {
+    const req = http.request(httpOptions, (res) => {
       res.on('data', d =>{
         console.log("Respuesta de la API recibida");
         callback(d, false);

@@ -11,7 +11,8 @@ let token = null;// = "Tk-17104ljcprrgwfrtonajpqdls20242";
 let id_contenedor = null;
 
 let host_web_socket = "ws://gusydenis.duckdns.org:28000";
-let host_API = "hqna10txtk.execute-api.eu-west-3.amazonaws.com";
+let host_API = "gusydenis.duckdns.org";
+let port_API = 91;
 
 const USER_DATA_PATH = path.join(app.getPath("userData"), 'user_data.json');
 
@@ -28,13 +29,14 @@ const createWindow = () => {
         preload: path.join(__dirname, 'preload.js')
     },
     minHeight: 600,
-    minWidth: 800
+    minWidth: 800,
+    icon: path.join(__dirname, '../assets/icons2/logo.png')
   })
-
+  win.setMenu(null);
   win.loadFile(path.join(__dirname,'../html/login.html'));
 
   //Abrimos las web tools
-  win.webContents.openDevTools();
+  //win.webContents.openDevTools();
 }
 
 app.whenReady().then(() => {
@@ -78,6 +80,7 @@ ipcMain.on('get-global-variables', (e, pantalla)=>{
       mapaVariables.set('token', token);
       mapaVariables.set('session_id', session_id);
       mapaVariables.set('host_API', host_API);
+      mapaVariables.set('port_API', port_API);
       break;
     case "RDP":
     case "SSH":
@@ -86,9 +89,11 @@ ipcMain.on('get-global-variables', (e, pantalla)=>{
       mapaVariables.set('id_contenedor', id_contenedor);
       mapaVariables.set('host_WS', host_web_socket);
       mapaVariables.set('host_API', host_API);
+      mapaVariables.set('port_API', port_API);
       break;
     case "login":
       mapaVariables.set('host_API', host_API);
+      mapaVariables.set('port_API', port_API);
       break;
   }
 

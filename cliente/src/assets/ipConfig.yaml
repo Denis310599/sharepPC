@@ -10,4 +10,4 @@ network:
           via: 10.0.2.2
           on-link: true
       nameservers:
-          addresses: [8.8.8.8, 8.8.0.0]
+          addresses: [8.8.8.8, 8.8.4.4]

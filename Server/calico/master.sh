@@ -76,7 +76,10 @@ SERVICE_CIDR="172.16.0.0/12"
 
 kubeadm config images pull --cri-socket=unix:///var/run/crio/crio.sock
 
-# Initialize kubeadm based on PUBLIC_IP_ACCESS
+# Initialize kubeadm
+MASTER_PUBLIC_IP=gusydenis.duckdns.org
+#kubeadm config images pull 
+kubeadm init --control-plane-endpoint="$MASTER_PUBLIC_IP" --apiserver-cert-extra-sans="$MASTER_PUBLIC_IP" --pod-network-cidr="$POD_CIDR" --service-cidr="$SERVICE_CIDR" --node-name "$NODENAME" --ignore-preflight-errors Swap --cri-socket=unix:///var/run/crio/crio.sock
 
 if [[ "$PUBLIC_IP_ACCESS" == "false" ]]; then
     

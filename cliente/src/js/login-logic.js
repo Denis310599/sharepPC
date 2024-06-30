@@ -1,5 +1,6 @@
 const { ipcRenderer } = require("electron");
 const https = require('https');
+const http = require('http');
 
 //Constantes del DOM
 const boton_mover_crear_cuenta = document.getElementById("botonMoverCrearCuenta");
@@ -11,6 +12,7 @@ const modal_cargando = document.getElementById("modalCargando");
 
 //Variables globales
 let host_API;
+let port_API;
 
 /***********************************
  *    Eventos
@@ -72,7 +74,7 @@ function iniciarSesion(){
 
   muestraDialogCargando("Iniciando sesión");
   //Inicia sesion a traves de la API
-  enviaPeticionAPI('POST', "/session", {'user': usuario.trim(),
+  enviaPeticionAPI('POST', "/session",  "", {'user': usuario.trim(),
                                       'contra': contra},
   (data, error)=>{
     hideDialogCargando();
@@ -126,7 +128,7 @@ function iniciarSesion(){
 function enviaPeticionAPI(peticion, ruta, tk, args, callback){
   var httpOptions = {
     hostname: host_API,
-    port: 443,
+    port: port_API,
     method: peticion
   }
   
@@ -146,7 +148,7 @@ function enviaPeticionAPI(peticion, ruta, tk, args, callback){
     httpOptions.path = path_final;
 
   //Peticion POST
-  }else if(peticion == 'POST'){
+  }else{
     httpOptions.path = "/Test"+ruta;
     
     const datosAux = args;
@@ -160,10 +162,12 @@ function enviaPeticionAPI(peticion, ruta, tk, args, callback){
       'Content-Type': 'application/json',
       'Content-Length': data.length
     };
+
+    console.log(data);
   }
 
   //Envio la peticion
-  const req = https.request(httpOptions, (res) => {
+  const req = http.request(httpOptions, (res) => {
     res.on('data', d =>{
       console.log(data);
       console.log("Respuesta de la API recibida");
@@ -374,6 +378,7 @@ ipcRenderer.send('get-global-variables', "login");
 //Espero a rebir respuesta del main
 ipcRenderer.on('global-variables', (e, variables)=>{
   host_API = variables.get('host_API');
+  port_API = variables.get('port_API');
 
   //Compruebo que exista el token, para saber si inicio automaticamente o no
   ipcRenderer.send('get-sesion-persistente');

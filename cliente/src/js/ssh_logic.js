@@ -1,5 +1,6 @@
 const { ipcRenderer } = require("electron");
 const { Terminal } = require('@xterm/xterm');
+const  { FitAddon } = require('@xterm/addon-fit');
 //Elementos del DOM
 //const videoElement = document.querySelector('video');
 const textoEstado = document.querySelector('.texto-estado');
@@ -17,6 +18,7 @@ const configuration = {
 
 let host_WS;
 let host_API;
+let port_API;
 //var idDestino;
 var id_origen;
 var token;
@@ -392,9 +394,13 @@ async function autenticaWs(signalingChannel, destino){
  */
 function configuraTerminal(idDestino){
     term = new Terminal();
-
+    const fitAddon = new FitAddon();
+    term.loadAddon(fitAddon);
+    
     term.open(document.getElementById('terminal-container'));
-    term.write('Holaa\n');
+    fitAddon.fit();
+
+    term.write('\n Usuario: share, Contraseña: share\n');
     //Envio los comando al servidor cuando los ejecuto
     term.onData(data=>{
         const mensaje = {'tipo': "cmd", 'datos': data};
@@ -402,6 +408,23 @@ function configuraTerminal(idDestino){
         console.log(mensaje);
         //term.write(data);
     });
+
+    window.onresize = function () {
+        fitAddon.fit();
+    };
+
+    term.onResize((evt) => {
+        const terminal_size = {
+            Width: evt.cols,
+            Height: evt.rows,
+          };
+        const mensaje = {'tipo': "cmd", 'datos': "\x04" + JSON.stringify(terminal_size)};
+        //conexiones.get(idDestino).dc.send(JSON.stringify(mensaje));
+        console.log(mensaje);
+
+    });
+
+    
 }
 
 /**
@@ -413,7 +436,7 @@ function procesaMensajeDataChannel(event){
     const dataJSON = JSON.parse(mensaje);
     if(dataJSON.datos == '\r\n*** SSH CONNECTION CLOSED ***\r\n'){
         //Si la conexion SSH se cierra, me salgo
-        //desconectar();
+        desconectar();
     }
 
     if(term !== null){

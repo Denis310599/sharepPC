@@ -84,7 +84,7 @@ def logout(body, conn):
     #Eliminamos la entrada de la BDD
     cur = conn.cursor()
     sql = "DELETE FROM sesiones WHERE token=%s;"
-    cur.execute(sql, (sessionID,))
+    cur.execute(sql, (sessionID, ))
 
     ret = {
         "code": 0,

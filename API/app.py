@@ -1,10 +1,19 @@
 from flask import Flask
-from flask import request, abort
+from flask import request, abort, jsonify
+from werkzeug.exceptions import HTTPException
 import database
 import funcionesLogin
 import funcionesMain
+import logging
 
 app = Flask(__name__)
+
+##Loggin##
+if __name__ != '__main__':
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers.extend(gunicorn_logger.handlers)
+    app.logger.setLevel(gunicorn_logger.level)
+
 
 ##############################################################
 #                          LOGIN
@@ -43,7 +52,7 @@ def cuentas():
 @app.route("/Test/container", methods=['GET', 'POST', 'PATCH', 'PUT', 'DELETE'])
 def contenedores():
     #Obtengo el body
-    body = request.json
+    
 
     #Llamo al metodo en funcion de la accion que se solicite
     #### GET ####
@@ -52,26 +61,30 @@ def contenedores():
         token = request.args.get('token')
 
         if 'id' in request.args:
-            ejectuaFuncion(funcionesMain.getContainerStatus, True, token, request.args.get('id'))
+            ret = ejectuaFuncion(funcionesMain.getContainerStatus, True, token, request.args.get('id'))
         else:
-            ejectuaFuncion(funcionesMain.getContainers, True, token)
-    #### POST ####
-    elif request.method == 'POST':
-        #Si es un metodo POST se quiere crear un nuevo contenedor
-        ejectuaFuncion(funcionesMain.createContainer, True, body)
-    #### PATCH ####
-    elif request.method == 'PATCH':
-        #Si es el metodo PATCH se quiere actualizar un contenedor
-        ejectuaFuncion(funcionesMain.updateContenedor, True, body)
+            ret = ejectuaFuncion(funcionesMain.getContainers, True, token)
     #### PUT ####
     elif request.method == 'PUT':
         #Si es el metodo PATCH se quiere actualizar un contenedor
-        ejectuaFuncion(funcionesMain.containerReady, True, request.args.get('token'))
+        ret = ejectuaFuncion(funcionesMain.containerReady, True, request.args.get('token'))
+    else:
+        body = request.json
+
+    #### POST ####
+    if request.method == 'POST':
+        #Si es un metodo POST se quiere crear un nuevo contenedor
+        ret = ejectuaFuncion(funcionesMain.createContainer, True, body)
+    #### PATCH ####
+    elif request.method == 'PATCH':
+        #Si es el metodo PATCH se quiere actualizar un contenedor
+        ret = ejectuaFuncion(funcionesMain.updateContenedor, True, body)
     #### DELETE ####
     elif request.method == 'DELETE':
         #Si es el metodo DELETE se quiere eliminar el contenedor
-        ejectuaFuncion(funcionesMain.deleteContainer, True, body)
+        ret = ejectuaFuncion(funcionesMain.deleteContainer, True, body)
 
+    return ret
 
 
 
@@ -80,42 +93,45 @@ def contenedores():
 ##############################################################
 @app.route("/Test/kubejoin", methods=['POST', 'GET'])
 def kubejoin():
-    #Obtengo el body
-    body = request.json
-
     #### GET ####
     if request.method == 'GET':
         #Si es un metodo GET, obtengo los parametros de la query string
         token = request.args.get('token')
         ts = int(request.args.get('ts'))
-        ejectuaFuncion(funcionesMain.getKubejoin, True, token, ts)        
+        ret = ejectuaFuncion(funcionesMain.getKubejoin, True, token, ts)        
+    else:
+        body = request.json
 
     #### POST ####
-    elif request.method == 'POST':
+    if request.method == 'POST':
         #Si es un metodo POST se quiere actualizar el comando kubejoin
-        ejectuaFuncion(funcionesMain.updateKubejoin, True, body)
+        ret = ejectuaFuncion(funcionesMain.updateKubejoin, True, body)
 
+    return ret
 
 ##############################################################
 #                          vms
 ##############################################################
 @app.route("/Test/vms", methods=['GET', 'DELETE'])
 def vms():
-    #Obtengo el body
-    body = request.json
+
 
     #### GET ####
     if request.method == 'GET':
         #Si es un metodo GET, obtengo los parametros de la query string
         token = request.args.get('token')
-        mv_id = int(request.args.get('mv_id'))
-        ejectuaFuncion(funcionesMain.getMvIp, True, token, mv_id)        
-
+        mv_id = request.args.get('mv_id')
+        ret = ejectuaFuncion(funcionesMain.getMvIp, True, token, mv_id)        
+    else:
+        #Obtengo el body
+        body = request.json
+    
     #### DELETE ####
-    elif request.method == 'DELETE':
+    if request.method == 'DELETE':
         #Si es un metodo POST se eliminar la ip
-        ejectuaFuncion(funcionesMain.rmMvIp, True, body)
+        ret = ejectuaFuncion(funcionesMain.rmMvIp, True, body)
 
+    return ret
 
 ##############################################################
 #                          ws
@@ -124,7 +140,8 @@ def vms():
 def authWS():
     #Obtengo el body
     body = request.json
-    ejectuaFuncion(funcionesMain.authWS, True, body)
+    ret = ejectuaFuncion(funcionesMain.authWS, True, body)
+    return ret
 
 
 
@@ -148,9 +165,10 @@ def ejectuaFuncion(function, connection_needed, *args):
         else:
             ret = function(*args)
     except Exception as e:
-        print("###Error###")
-        print("ARGS: ", *args)
-        print(e)
+        app.logger.warning("###Error###")
+        args_str = ','.join(map(str,args))
+        app.logger.warning("ARGS: " + args_str)
+        app.logger.warning(e)
         abort(500, "Internal Server Error")
         
 
@@ -161,7 +179,27 @@ def ejectuaFuncion(function, connection_needed, *args):
 
     return ret
     
-	
+
+#Manejo de excepciones
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Default to 500 Internal Server Error if code is not set
+    code = 500
+    if isinstance(e, HTTPException):
+        code = e.code
+        name = e.name
+        description = e.description
+    else:
+        name = "Internal Server Error"
+        description = str(e)
+    
+    response = jsonify({
+        "code": code,
+        "name": name,
+        "description": description,
+    })
+    response.status_code = code
+    return response
     
 		
 

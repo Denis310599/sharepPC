@@ -2,6 +2,7 @@
 const { exec, spawn } = require('child_process');
 const { ipcRenderer, ipcMain } = require('electron');
 const https = require('https');
+const http = require('http');
 const { stdout, stdin } = require('process');
 //const {exec} = require('child_process');
 
@@ -45,6 +46,7 @@ let session_token;
 let session_id;
 
 let host_API;
+let port_API;
 
 /**
  * Datos de la maquina virtual
@@ -70,23 +72,28 @@ let memoria_mv;
 function enviaPeticionAPI(peticion, ruta, tk, args, callback){
   var httpOptions = {
     hostname: host_API,
-    port: 443,
+    port: port_API,
     method: peticion
   }
   console.log("Enviando peticion API: \n\t");
+  console.log("Peticion: " + peticion);
+  console.log("Ruta: "+ruta);
   console.log(args);
   let data; //Contendra, en caso de ser necesario, el body
 
   //Relleno los httpOptions segun el metodo usado
 
   //Peticion GET
-  if(peticion == 'GET'){
+  if(peticion == 'GET' || peticion == 'PUT'){
     
     let path_final = "/Test"+ruta+"?token="+tk;
 
-    Object.keys(args).forEach(item =>{
-      path_final += `&${item.key}=${item.value}`;
-    });
+    for (const prop in args){
+      path_final += `&${prop}=${args[prop]}`;
+    }
+
+
+    console.log("Peticion GET o PUT: " + path_final);
 
     httpOptions.path = path_final;
 
@@ -103,14 +110,23 @@ function enviaPeticionAPI(peticion, ruta, tk, args, callback){
       'Content-Type': 'application/json',
       'Content-Length': data.length
     };
+
+    console.log("Peticion distinta de GET o PUT: ");
+    console.log(datosAux);
   }
 
   //Envio la peticion
-  const req = https.request(httpOptions, (res) => {
+  const req = http.request(httpOptions, (res) => {
+    if(res.statusCode)
+
     res.on('data', d =>{
       console.log(data);
       console.log("Respuesta de la API recibida");
-      callback(d, false);
+      if(res.statusCode == 200){
+        callback(d, false);
+      }else{
+        callback(d, true);
+      }
     });
   });
 
@@ -120,7 +136,7 @@ function enviaPeticionAPI(peticion, ruta, tk, args, callback){
   });
 
   //Si tengo que enviar body, lo envio
-  if(peticion == 'POST'){
+  if(peticion != 'GET' && peticion != 'PUT'){
     req.write(data);
   }
 
@@ -693,6 +709,7 @@ function muestraMensajeAlerta(titulo, texto, cancelarBtn=true, aceptarBtn=true, 
   modal_alerta.onanimationend = ()=>{
     modal_alerta.classList.remove("in");
     modal_alerta.querySelector('.modal-content').classList.remove("in");
+    modal_alerta.classList.remove("out");
   }
 
 
@@ -727,13 +744,16 @@ function botonCerrarSesionPulsado(){
   muestraMensajeAlerta("Cerrar Sesión", "Está a punto de cerrar la sesión. ¿Desea continuar?", true, true, (e)=>{
     //Si decide salir, envio la peticion a la API
     muestraDialogCargando("Cerrando sesión");
-    enviaPeticionAPI('DELETE', "/session", session_token, {},
+    enviaPeticionAPI('DELETE', "/session", session_token, {'a': 'aa'},
       (data, error)=>{
+        console.log("data: " + data + ". Error: " + error);
         hideDialogCargando();
         //Me da igual si hay error o no, salgo igualmente
         //Elimino primero la informacion de sesion persistente
-        ipcRenderer.send("set-sesion-persistente", "", "");
-        ipcRenderer.send("cambia-pantalla", "login");
+        if(!error){
+          ipcRenderer.send("set-sesion-persistente", "", "");
+          ipcRenderer.send("cambia-pantalla", "login");
+        }
       });
   });
 }
@@ -750,6 +770,7 @@ function muestraDialogCargando(titulo, contenido = null){
 
   if(contenido !== null){
     document.getElementById("contenidoModalCargando").textContent = contenido;
+    document.getElementById("contenidoModalCargando").scrollTop = document.getElementById("contenidoModalCargando").scrollHeight;
   }else{
     document.getElementById("contenidoModalCargando").textContent = "";
   }
@@ -859,22 +880,73 @@ function comenzarCompartirPC(){
  */
 async function creaMvCompartir(){
   //Indica al usuario que esta cargando
-  muestraDialogCargando("Comprobando que el software necesario se encuentre instalado");
+  const msg = "Comprobando que el software necesario se encuentre instalado";
+  muestraDialogCargando(msg);
 
   //Comprueba si vagrant está instalado
   const vagrantInstalado = await checkVagrantInstalado();
-  hideDialogCargando();
+  
 
   if(vagrantInstalado){
-    //Muestra el panel de configuracion de la maquina virtual
-    muestraYConfiguraModalCreacionMV();
+    //Compruebo que vbguest se encuentre instalado
+    if(await compruebaPluginVg()){
+      hideDialogCargando();
+      //Muestra el panel de configuracion de la maquina virtual
+      muestraYConfiguraModalCreacionMV();
+    }else{
+      hideDialogCargando();
+      muestraMensajeAlerta("Error al instalar las dependencias", "Se ha producido un error al instalar las dependencias necesarias para la máquina virtual. Por favor, inténtelo de nuevo más adelante", false, true);
+    }
+    
   }else{
+    hideDialogCargando();
     //Procede a instalar vagrant
     muestraMensajeAlerta("Vagrant No Instalado", "Vagrant no se encuentra instalado en su equipo y es necesario para poder compartir su ordenador ¿Desea instalarlo ahora mismo?", true, true, ()=>{instalarVagrant()});
     
   }
   //Comprueba si VBox está instalado ( lo hace automaticamente Vagrant)
 }
+
+/**
+ *  Comrpueba si el plugin esta instlado y lo instala
+ * @returns Si se ha instalado correctamente o se ha producido un error
+ */
+function compruebaPluginVg(){
+  return new Promise((resolveFunc)=>{
+    // Comando para comprobar si Vagrant está instalado
+    const comando = 'vagrant plugin list';
+
+    // Ejecutar el comando para obtener la versión de Vagrant
+    exec(comando, (error, stdout, stderr) => {
+        if (error) {
+            console.error('plugin no está instalado en el equipo.');
+            resolveFunc(false);
+            // Aquí puedes llamar a una función para instalar Vagrant si lo deseas
+        } else {
+            const lineas = stdout.split('\n');
+            console.log("Output: " + stdout);
+            let pluginEncontrado = false;
+
+            lineas.forEach(linea =>{
+              console.log(linea);
+              if(!pluginEncontrado && linea.includes('vagrant-vbguest')){
+                pluginEncontrado = true;
+              }
+            })
+
+            if(pluginEncontrado){
+              resolveFunc(true);
+            }else{
+              //Se intenta instalar el plugin
+              exec('vagrant plugin install vagrant-vbguest', (error2, stdout2, stderr2)=>{
+                resolveFunc(!error2);
+              });
+           }
+          }
+    });
+  });
+}
+
 
 /**
  * Funcion que instala vagrant en su equipo
@@ -1000,6 +1072,7 @@ function muestraYConfiguraModalCreacionMV(){
     modal_crear_mv.onanimationend = ()=>{
       modal_crear_mv.classList.remove("in");
       modal_crear_mv.querySelector('.modal-content').classList.remove("in");
+      modal_crear_mv.classList.remove("out");
   }
 
   //Obtencion de los datos
@@ -1195,7 +1268,7 @@ function arrancaMv(url){
       muestraMensajeAlerta("Error al arrancar la MV", "No se ha encontrado el identificador de la maquina virtual, por lo que es imposible asignar una IP", false, true);
     }
     //Consulto la API por si ha cambiado
-    enviaPeticionAPI("GET", "/kubejoin", session_token, {'ts': ts_almacenada}, 
+    enviaPeticionAPI('GET', "/kubejoin", session_token, {'ts': ts_almacenada}, 
     (dataAPI, errorAPI)=>{
       try{
         if(errorAPI){
@@ -1203,6 +1276,7 @@ function arrancaMv(url){
           throw("Error en la API (Internal Server Error)");
         }else{
           //He obtenido respuesta, veo si tengo que actualizar o no la ejecucion
+          console.log(dataAPI);
           const jsonRecibido = JSON.parse(dataAPI);
           console.log(jsonRecibido);
           if('code' in jsonRecibido){
@@ -1210,7 +1284,7 @@ function arrancaMv(url){
               console.log("No hace falta actualizar kubejoin");
               //Comando actualizado, no hay que hacer nada
               ejecutaVagrantUp(url, null, mv_id);
-            }else if(jsonRecibido.code == 1){
+            }else if(jsonRecibido.code == 2){
               //Comando necesita actualizarse, se necesita reprovisionar la MV
               console.log("Es necesario actualizar el kubejoin");
               ejecutaVagrantUp(url, jsonRecibido.args.comando, mv_id);
@@ -1237,23 +1311,22 @@ function arrancaMv(url){
  */
 function ejecutaVagrantUp(url, comando, mvid){
   muestraDialogCargando("Arrancando PC compartido");
+
+
   console.log("Ejecutando vagrant up...");
   //Funcion que ejecuta el vagrant up
   const funcionVagrantUp = ()=>{
     //Segun si tengo comando, obligo a ejecutar el script de provision o no
-    let vagrantCommand = 'vagrant';
-    let args = ['up'];
-    //if(comando !== null){
-      args = ['up', '--provision'];
-    //}
+    let vagrantCommand = 'vagrant destroy -f && vagrant up --provision';
 
     //Abro la maquina virtual
     actualizaUICompartirPC("cargando");
-    const proceso = spawn(vagrantCommand, args, {'cwd': url});
-
+    const proceso = spawn(vagrantCommand, [], {'cwd': url, shell: true});
+    var dataAux = "";
     proceso.stdout.on('data', (data)=>{
       console.log("stdout: " + data );
-      muestraDialogCargando("Arrancando PC compartido", data);
+      dataAux += data;
+      muestraDialogCargando("Arrancando PC compartido", dataAux);
     });
 
     proceso.stderr.on('data', (data)=>{
@@ -1293,7 +1366,7 @@ function ejecutaVagrantUp(url, comando, mvid){
   //Funcion que asigna la IP a la maquina virtual
   const funcionActualizaIp = ()=>{
     //Hago la consulta a la API
-    enviaPeticionAPI('GET', "/mvs", session_token, {'mv_id': mvid},
+    enviaPeticionAPI('GET', "/vms", session_token, {'mv_id': mvid},
       (dataAPI, errorAPI) => {
         try{
           if(errorAPI){
@@ -1301,6 +1374,7 @@ function ejecutaVagrantUp(url, comando, mvid){
             throw("Error en la API (Internal Server Error)");
           }else{
             //He obtenido respuesta, veo si tengo que actualizar o no la ejecucion
+            console.log(dataAPI);
             const jsonRecibido = JSON.parse(dataAPI);
             console.log(jsonRecibido);
             if('code' in jsonRecibido){
@@ -1388,9 +1462,11 @@ function detenerMV(url, mensaje = null){
   }
   muestraDialogCargando(mensajeCargando);
   try{
-    const proceso = spawn('vagrant', ['halt'], {'cwd': url});
+    var dataAux = "";
+    const proceso = spawn('vagrant', ['destroy', '-f'], {'cwd': url});
     proceso.stdout.on('data', (data)=>{
       console.log("stdout: " + data );
+      dataAux += data;
       muestraDialogCargando(mensajeCargando, data);
     });
 
@@ -1443,9 +1519,12 @@ function eliminarMV(url){
   console.log("Eliminando maquina virtual");
   const proceso = spawn('vagrant', ['destroy',  '-f'], {'cwd': url});
 
+  var dataAux = ""
   proceso.stdout.on('data', (data)=>{
     console.log("stdout: " + data );
-    muestraDialogCargando("Eliminando MV", data);
+
+    dataAux += data;
+    muestraDialogCargando("Eliminando MV", dataAux);
   });
 
   proceso.stderr.on('data', (data)=>{
@@ -1629,8 +1708,8 @@ function compruebaEstadoMV(callback){
               callback("off");
               eliminaIpMv(url);
             }else if(linea.includes('not created')){
-              ipcRenderer.send("set-mv-path", "");
-              callback("inexistente");
+              //ipcRenderer.send("set-mv-path", "");
+              callback("off");
               eliminaIpMv(url);
             }else{
               callback("off");
@@ -1670,7 +1749,7 @@ function eliminaIpMv(url){
     if(mv_id == null){
      return
     }
-    enviaPeticionAPI('POST', "/mvs", session_token, {'mv_id': mv_id}, (data, err)=>{console.log("Respuesta de la API. Error: " + err + ". Datos: " + data)});
+    enviaPeticionAPI('DELETE', "/vms", session_token, {'mv_id': mv_id}, (data, err)=>{console.log("Respuesta de la API. Error: " + err + ". Datos: " + data)});
   });
 }
 /***********************************
@@ -1700,6 +1779,7 @@ ipcRenderer.send('get-global-variables', "main");
 ipcRenderer.on('global-variables', (e, variables)=>{
   ipcRenderer.removeAllListeners('global-variables');
   host_API = variables.get('host_API');
+  port_API = variables.get('port_API');
   session_id = variables.get('session_id');
   session_token = variables.get('token');
 

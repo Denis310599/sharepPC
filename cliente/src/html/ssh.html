@@ -15,10 +15,14 @@
     <script defer src="../js/rdp_visuals.js"></script>
   </head>
   <body>
-    <div class="RDP-video-container" style="background-color: grey;">
-      <div class="texto-estado" style="display: block;">Conectando...</div>
-      <div id="terminal-container" style="height: 500px; display: none;"></div>
+    <div id="terminal-container" style="overflow: hidden; display: none; top: 0; bottom: 0; height: 100vh;">
+      <div id="terminal"></div>
     </div>
+
+    <div class="RDP-video-container" style="background-color: grey; position: absolute;">
+      <div class="texto-estado" style="display: block;">Conectando...</div>
+    </div>
+    
 
     <div class="RDP-contenedor-desplegable desplegable-lateral">
       <div class="RDP-pestania-contenedor-comandos pestania-desplegable">

@@ -1,5 +1,6 @@
 const { ipcRenderer } = require("electron");
 const https = require('https');
+const http = require('http')
 
 const inicia = false;
 //const resultado = document.getElementById('resultado');
@@ -465,7 +466,7 @@ function enviaPeticionAPI(peticion, tk, callback){
       path: contenedorPath+"?token=" + tk,
       method: peticion
     }
-    const req = https.request(httpOptions, (res) => {
+    const req = http.request(httpOptions, (res) => {
       res.on('data', d =>{
         console.log("Respuesta de la API recibida");
         callback(d, false);
