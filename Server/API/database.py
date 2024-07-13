@@ -8,7 +8,7 @@ def connect():
         #password = os.environ['PASSWORD'])
         host = "172.17.0.1",
         database = "sharepc",
-        user = "batman",
-        password = "soybruce")
+        user = "",
+        password = "")
         
     return conn

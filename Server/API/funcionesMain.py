@@ -111,7 +111,9 @@ def createDeployment(nombreContenedor, token, imagen, conexion, cpus='2.0', memo
         #Envio la peticion a la API
         try:
             if update:
-                respuesta = api_instance.patch_namespaced_deployment(namespace=namespace, body=body, name=nombreContenedor)
+                respuesta = api_instance.delete_namespaced_deployment(nombreContenedor, namespace="default")
+                respuesta = api_instance.create_namespaced_deployment(namespace=namespace, body=body)
+                
             else:
                 respuesta = api_instance.create_namespaced_deployment(namespace=namespace, body=body)
                 

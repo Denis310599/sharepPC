@@ -169,7 +169,7 @@ function consultaContenedoresUsuario(tk){
             datos_contenedor.memo_s = contenedor.memo_s;
             datos_contenedor.memo_t = contenedor.memo_t == 0 ? "Mi" : "Gi";
             datos_contenedor.imagen = contenedor.imagen;
-            datos_contenedor.tipo = contenedor.conexion == 0 ? "Remote Desktop" : "Terminal";
+            datos_contenedor.tipo = contenedor.conexion == 0 ? "0" : "1";
             lista_maquinas.push(datos_contenedor);
             console.log("Procesado contenedor");
             console.log(datos_contenedor);
@@ -225,7 +225,7 @@ function actualizaUIContenedores(){
       switch(index){
         case 0:
           //Tipo de conexion
-          elemento.textContent = contenedor.tipo;
+          elemento.textContent = contenedor.tipo == 0 ? "Terminal" : "Escritorio Remoto";
           break;
         case 1:
           //Imagen
@@ -243,14 +243,20 @@ function actualizaUIContenedores(){
     });
 
     const boton = tarjeta.querySelector(".boton-aceptar");
-    if(contenedor.estado == 1){
-      boton.textContent = "Conectar";
-      boton.disabled = false;
-    }else{
-      boton.textContent = "Encendiendo...";
-      boton.disabled = true;
+    switch(contenedor.estado){
+      case 0:
+        boton.textContent = "Encendiendo...";
+        boton.disabled = true;
+        break;
+      case 1:
+        boton.textContent = "Conectar";
+        boton.disabled = false;
+        break;
+      case 2:
+        boton.textContent = "Actualizando...";
+        boton.disabled = true;
+        break;
     }
-
     //Añado los listeners a los elementos de la tarjeta
     boton.addEventListener('click', (e)=>{
       botonConectarPulsado(e.target);
@@ -514,7 +520,7 @@ function botonGuardarEdicionPulsado(){
   const mem_t = modal_edicion.querySelector(".input-mem-type");
   const nombre = modal_edicion.querySelector(".nombre-contenedor");
   const cpus = modal_edicion.querySelector(".input-cpus");
-  const tipoConexion = parseInt(modal_creacion.querySelector(".tipo-connection-type").value);
+  const tipoConexion = parseInt(modal_creacion.querySelector(".input-connection-type").value);
 
   //Actualizamos la UI del contenedor para que el usuario no pueda hacer nada
   botonGuardar.disabled = true;

@@ -36,7 +36,7 @@ const createWindow = () => {
   win.loadFile(path.join(__dirname,'../html/login.html'));
 
   //Abrimos las web tools
-  //win.webContents.openDevTools();
+  win.webContents.openDevTools();
 }
 
 app.whenReady().then(() => {
