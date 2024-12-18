@@ -22,7 +22,6 @@ is achieved by developing a desktop app and setting up a server that utilizes va
 
 <br></br>
 ## Some captures
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/eUziymPtJIU/0.jpg)](https://www.youtube.com/watch?v=eUziymPtJIU)
 
 ### Login
 ![Teapot](./document/images/LogIn.png "Login")
@@ -39,3 +38,6 @@ is achieved by developing a desktop app and setting up a server that utilizes va
 
 ### Host Side
 ![Host Interface](./document/images/LogIn.png "Host Interface")
+
+## Demo Video
+[![Demo Video](https://img.youtube.com/vi/eUziymPtJIU/0.jpg)](https://www.youtube.com/watch?v=eUziymPtJIU)
