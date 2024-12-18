@@ -1,6 +1,7 @@
 # sharepPC
 
 ![Logo](./document/images/logo.png "Logo")
+<br></br>
 Share PC is a place where people with high resources PCs (Hosts) can offer their computational power to the rest of the world, and allow people with more low spec computers (Clients) to use this shared computational power by creating a remote enviroment on the Hosts PC.
 
 This repo contains all the code base used in my Master's degree final project for the Telecommunications Engineering Master's Degree at Universidad de Sevilla. It contains the code for both Clients side and the Server side.
