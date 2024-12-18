@@ -236,7 +236,7 @@ function crearCuentaPulsado(){
 
   muestraDialogCargando("Creando cuenta");
   //Procedemos a crear la cuenta
-  enviaPeticionAPI('POST', "/account", {'user': usuario,
+  enviaPeticionAPI('POST', "/account", "login", {'user': usuario,
                                       'contra': contra,
                                       'correo': correo},
   (data, error) =>{

@@ -225,7 +225,7 @@ function actualizaUIContenedores(){
       switch(index){
         case 0:
           //Tipo de conexion
-          elemento.textContent = contenedor.tipo == 0 ? "Terminal" : "Escritorio Remoto";
+          elemento.textContent = contenedor.tipo == 1 ? "Terminal" : "Escritorio Remoto";
           break;
         case 1:
           //Imagen
@@ -288,7 +288,7 @@ function botonConectarPulsado(elem){
   const args = new Map();
   args.set('id_contenedor', contenedor.id);
 
-  if(contenedor.tipo == "Terminal"){
+  if(contenedor.tipo == 1){
     ipcRenderer.send('cambia-pantalla', "SSH", args);
   }else{
     ipcRenderer.send('cambia-pantalla', "RDP", args);
